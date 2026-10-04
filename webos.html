@@ -1,0 +1,2499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebOS — macOS Sonoma Web Edition</title>
+<style>
+/* ============ Reset & tokens ============ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+:root{
+  --accent:#007aff;--accent-hi:#0a84ff;
+  --red:#ff3b30;--green:#28c840;
+  --text:#1d1d1f;--text-2:rgba(29,29,31,.55);--text-3:rgba(29,29,31,.32);
+  --hair:rgba(0,0,0,.10);--hair-strong:rgba(0,0,0,.16);
+  --glass:rgba(250,250,252,.72);--glass-strong:rgba(252,252,254,.86);--glass-bar:rgba(255,255,255,.42);
+  --radius:11px;--mb-h:28px;--dock-h:66px;
+  --shadow-win:0 0 0 .5px rgba(0,0,0,.22),0 12px 28px -6px rgba(0,0,0,.18),0 36px 80px -12px rgba(0,0,0,.38);
+  --shadow-win-off:0 0 0 .5px rgba(0,0,0,.12),0 8px 22px -6px rgba(0,0,0,.16),0 18px 48px -12px rgba(0,0,0,.22);
+  --shadow-pop:0 0 0 .5px rgba(0,0,0,.12),0 10px 40px rgba(0,0,0,.25);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);color:var(--text);background:#cfd8e8;font-size:14px;user-select:none;cursor:default}
+button{font:inherit;color:inherit;border:0;background:none;cursor:default;text-align:left}
+input,textarea{font:inherit;color:inherit;user-select:text}
+input:focus,textarea:focus{outline:none}
+::selection{background:rgba(0,122,255,.25)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:6px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.34);border:2px solid transparent;background-clip:content-box}
+svg{display:block}
+
+/* ============ Wallpaper (pure CSS/SVG, Sonoma-style) ============ */
+#wallpaper{position:fixed;inset:0;z-index:0;overflow:hidden;
+  background:
+   radial-gradient(1400px 900px at 88% 8%,rgba(255,213,160,.95),rgba(255,213,160,0) 62%),
+   radial-gradient(1100px 850px at 8% 88%,rgba(150,199,244,.92),rgba(150,199,244,0) 62%),
+   radial-gradient(950px 950px at 74% 82%,rgba(255,178,196,.78),rgba(255,178,196,0) 64%),
+   radial-gradient(800px 640px at 24% 18%,rgba(214,198,250,.85),rgba(214,198,250,0) 60%),
+   linear-gradient(152deg,#fdeedd 0%,#f9dce8 30%,#e3ddf3 58%,#c7dcf5 100%);
+  transition:filter .5s}
+body.wp-alt #wallpaper{
+  background:
+   radial-gradient(1300px 900px at 12% 10%,rgba(255,196,146,.85),rgba(255,196,146,0) 60%),
+   radial-gradient(1100px 900px at 92% 86%,rgba(126,168,236,.9),rgba(126,168,236,0) 62%),
+   radial-gradient(900px 900px at 62% 34%,rgba(232,168,208,.6),rgba(232,168,208,0) 62%),
+   linear-gradient(160deg,#2e3a63 0%,#5d4a8e 34%,#b06a9a 62%,#e8a17c 88%,#f4c98d 100%)}
+body.wp-alt{color:#fff}
+#wp-waves{position:absolute;inset:0;width:100%;height:100%;transform:scale(1.08);filter:blur(26px) saturate(115%)}
+body.wp-alt #wp-waves{opacity:.5}
+
+/* ============ Desktop ============ */
+#desktop{position:fixed;top:var(--mb-h);left:0;right:0;bottom:0;z-index:1}
+
+/* ============ Menu bar ============ */
+#menubar{position:fixed;top:0;left:0;right:0;height:var(--mb-h);z-index:8000;display:flex;align-items:center;
+  background:var(--glass-bar);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:inset 0 -.5px 0 rgba(0,0,0,.12);font-size:13px;color:var(--text);padding:0 8px;gap:1px}
+#mb-left{display:flex;align-items:center;gap:1px;flex:1;min-width:0}
+#mb-right{display:flex;align-items:center;gap:1px}
+.mb-item{height:calc(var(--mb-h) - 6px);display:inline-flex;align-items:center;gap:6px;padding:0 9px;border-radius:5px;white-space:nowrap;color:var(--text)}
+.mb-item svg{flex:none}
+.mb-item:hover{background:rgba(0,0,0,.06)}
+.mb-item.open{background:rgba(0,0,0,.09)}
+.mb-app{font-weight:600}
+#mb-apple svg{width:15px;height:15px;fill:currentColor}
+#mb-wifi.off svg{opacity:.32}
+.menu-dropdown{position:fixed;top:calc(var(--mb-h) + 2px);min-width:230px;padding:5px;z-index:8500;border-radius:9px;
+  background:var(--glass-strong);backdrop-filter:blur(32px) saturate(180%);-webkit-backdrop-filter:blur(32px) saturate(180%);
+  box-shadow:var(--shadow-pop);font-size:13px;animation:pop-in .08s ease-out}
+@keyframes pop-in{from{opacity:0;transform:scale(.97) translateY(-2px)}to{opacity:1;transform:none}}
+.mi{width:100%;display:flex;align-items:center;justify-content:space-between;gap:28px;padding:3px 11px;border-radius:5px}
+.mi .mi-sc{color:var(--text-3);font-size:12.5px}
+.mi:hover:not(.disabled){background:var(--accent);color:#fff}
+.mi:hover:not(.disabled) .mi-sc{color:rgba(255,255,255,.75)}
+.mi.disabled{color:var(--text-3)}
+.msep{height:1px;background:var(--hair);margin:5px 11px}
+
+/* ============ Windows ============ */
+.window{position:absolute;display:flex;flex-direction:column;border-radius:var(--radius);overflow:hidden;outline:none;
+  background:rgba(247,247,250,.84);backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);
+  box-shadow:var(--shadow-win)}
+.window.inactive{box-shadow:var(--shadow-win-off)}
+.window.inactive .w-title{color:var(--text-3)}
+.window.inactive .tl{background:#d9d9de}
+.window.inactive .tl svg{opacity:0!important}
+.window.opening{animation:win-open .2s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes win-open{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.titlebar{height:40px;flex:none;display:flex;align-items:center;padding:0 13px;position:relative;
+  box-shadow:inset 0 -.5px 0 rgba(0,0,0,.09)}
+.traffic{display:flex;gap:8px;flex:none;position:relative;z-index:2}
+.tl{width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 0 0 .5px rgba(0,0,0,.14)}
+.tl svg{width:8px;height:8px;opacity:0}
+.traffic:hover .tl svg{opacity:.5}
+.tl-close{background:#ff5f57}.tl-min{background:#febc2e}.tl-zoom{background:#28c840}
+.w-title{position:absolute;left:50%;transform:translateX(-50%);max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:13px;font-weight:600;color:rgba(0,0,0,.78);pointer-events:none}
+.w-content{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.resize-h{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;z-index:5}
+
+/* ============ Dock ============ */
+#dock-wrap{position:fixed;bottom:7px;left:50%;transform:translateX(-50%);z-index:8000}
+#dock{display:flex;align-items:flex-end;gap:7px;padding:6px 9px;border-radius:21px;
+  background:rgba(255,255,255,.34);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.55),0 .5px 1px rgba(0,0,0,.1),0 12px 34px rgba(0,0,0,.24)}
+.dock-icon{width:52px;height:52px;position:relative;flex:none;transform-origin:50% 100%;transition:transform .18s ease-out;will-change:transform}
+.dock-icon svg{width:100%;height:100%;filter:drop-shadow(0 4px 6px rgba(0,0,0,.22))}
+.dock-icon .dot{position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;
+  background:rgba(0,0,0,.6);opacity:0;transition:opacity .2s}
+.dock-icon.running .dot{opacity:1}
+.dock-icon .tip{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%) translateY(3px);
+  padding:3px 11px;border-radius:7px;font-size:13px;color:var(--text);white-space:nowrap;pointer-events:none;opacity:0;
+  background:var(--glass-strong);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:var(--shadow-pop);transition:opacity .12s,transform .12s}
+.dock-icon:hover .tip{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ============ Toast / overlays ============ */
+#toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(6px);z-index:9000;padding:9px 20px;border-radius:11px;
+  background:rgba(38,38,43,.88);backdrop-filter:blur(16px);color:#fff;font-size:13.5px;opacity:0;pointer-events:none;
+  transition:opacity .22s,transform .22s;box-shadow:0 8px 26px rgba(0,0,0,.3)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#dim-overlay{position:fixed;inset:0;z-index:9500;background:#000;opacity:0;pointer-events:none;transition:opacity .25s}
+#sleep-overlay{position:fixed;inset:0;z-index:9800;background:#000;opacity:0;pointer-events:none;transition:opacity .6s}
+#sleep-overlay.on{opacity:1;pointer-events:auto}
+.sleep-hint{position:absolute;bottom:12%;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.5);font-size:14px;letter-spacing:.4px}
+#shutdown-overlay{position:fixed;inset:0;z-index:9900;background:#000;display:none;align-items:center;justify-content:center}
+#shutdown-overlay.on{display:flex}
+.sd-inner{text-align:center}
+#sd-power{width:74px;height:74px;margin:0 auto;border-radius:50%;border:1.5px solid rgba(255,255,255,.4);color:rgba(255,255,255,.75);
+  display:flex;align-items:center;justify-content:center;transition:.2s}
+#sd-power:hover{border-color:#fff;color:#fff;box-shadow:0 0 30px rgba(255,255,255,.25)}
+#sd-power svg{width:32px;height:32px}
+.sd-label{margin-top:22px;color:rgba(255,255,255,.85);font-size:15px;font-weight:600;letter-spacing:1.6px}
+
+/* ============ Control Center popover ============ */
+#cc-pop{position:fixed;top:calc(var(--mb-h) + 6px);right:8px;width:330px;z-index:8500;padding:12px;border-radius:16px;
+  background:var(--glass);backdrop-filter:blur(34px) saturate(180%);-webkit-backdrop-filter:blur(34px) saturate(180%);
+  box-shadow:var(--shadow-pop);animation:pop-in .1s ease-out}
+.cc-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.5);margin-bottom:9px}
+.cc-item:last-child{margin-bottom:0}
+.cc-ico{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.cc-ico.off{background:rgba(120,120,128,.32)}
+.cc-ico svg{width:17px;height:17px}
+.cc-txt{flex:1;min-width:0}
+.cc-txt b{display:block;font-size:13.5px;font-weight:600}
+.cc-txt span{display:block;font-size:11.5px;color:var(--text-2)}
+.cc-col{flex-direction:column;align-items:stretch;gap:9px}
+.cc-head{display:flex;justify-content:space-between;font-size:13.5px;font-weight:600}
+.cc-head .cc-mini{width:18px;height:18px;color:var(--text-2)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.cc-walls{display:flex;gap:9px}
+.cc-wall{width:64px;height:40px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative}
+.cc-wall.w1{background:linear-gradient(150deg,#fdeedd,#f6d7e6 40%,#d9d8f2 70%,#bcd9f6)}
+.cc-wall.w2{background:linear-gradient(160deg,#2e3a63,#5d4a8e 40%,#b06a9a 70%,#f0b57e)}
+.cc-wall.on{box-shadow:0 0 0 2px var(--accent)}
+
+/* Switch */
+.switch{position:relative;display:inline-block;width:40px;height:24px;flex:none}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch .knob{position:absolute;inset:0;border-radius:13px;background:rgba(120,120,128,.28);transition:.2s}
+.switch .knob:before{content:"";position:absolute;width:20px;height:20px;border-radius:50%;top:2px;left:2px;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s}
+.switch input:checked + .knob{background:var(--green)}
+.switch input:checked + .knob:before{transform:translateX(16px)}
+
+/* ============ Generic controls ============ */
+.btn{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 13px;border-radius:7px;background:rgba(120,120,128,.14);
+  font-size:13px;font-weight:500;white-space:nowrap}
+.btn:hover{background:rgba(120,120,128,.22)}
+.btn:active{background:rgba(120,120,128,.3)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-hi)}
+.btn svg{width:13px;height:13px}
+.icon-btn{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--text-2)}
+.icon-btn:hover{background:rgba(120,120,128,.16);color:var(--text)}
+.icon-btn svg{width:16px;height:16px}
+.sheet{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.sheet-card{width:72%;max-height:72%;display:flex;flex-direction:column;border-radius:13px;overflow:hidden;
+  background:var(--glass-strong);backdrop-filter:blur(30px);box-shadow:var(--shadow-pop)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;box-shadow:inset 0 -.5px 0 var(--hair)}
+.sheet-head b{font-size:13.5px}
+.sheet-list{overflow:auto;padding:6px}
+.file-row{width:100%;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;font-size:13.5px}
+.file-row:hover{background:rgba(0,0,0,.05)}
+.file-row svg{width:22px;height:22px;flex:none}
+.file-row small{margin-left:auto;color:var(--text-2);font-size:11.5px}
+.empty-note{padding:22px;text-align:center;color:var(--text-2);font-size:13px}
+
+/* ============ Calculator ============ */
+.calc{flex:1;display:flex;flex-direction:column;min-height:0;background:rgba(238,238,241,.55)}
+.calc-display{min-height:88px;padding:10px 18px 6px;display:flex;align-items:flex-end;justify-content:flex-end;
+  font-size:46px;font-weight:200;letter-spacing:.5px;overflow:hidden;white-space:nowrap}
+.calc-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair-strong);border-top:.5px solid var(--hair)}
+.ck{display:flex;align-items:center;justify-content:center;font-size:21px;background:#e8e8eb;transition:filter .06s}
+.ck:hover{filter:brightness(.95)}
+.ck:active{filter:brightness(.86)}
+.ck.fn{background:#d3d3d7;font-size:19px}
+.ck.op{background:#ff9f0a;color:#fff;font-size:26px}
+.ck.zero{grid-column:span 2}
+
+/* ============ Text editor ============ */
+.editor{flex:1;display:flex;flex-direction:column;min-height:0}
+.editor-toolbar{height:42px;flex:none;display:flex;align-items:center;gap:7px;padding:0 12px;box-shadow:inset 0 -.5px 0 var(--hair)}
+.editor-toolbar .sep{width:1px;height:16px;background:var(--hair);margin:0 3px}
+.editor-area{flex:1;min-height:0;resize:none;border:0;background:rgba(255,255,255,.62);padding:16px 22px;
+  font-size:14px;line-height:1.65;color:var(--text)}
+.editor-area::placeholder{color:var(--text-3)}
+.editor-status{height:26px;flex:none;display:flex;align-items:center;gap:16px;padding:0 13px;font-size:11.5px;color:var(--text-2);
+  box-shadow:inset 0 .5px 0 var(--hair)}
+.editor-status .saved{color:var(--green)}
+
+/* ============ Calendar ============ */
+.cal{flex:1;display:flex;flex-direction:column;min-height:0}
+.cal-head{height:54px;flex:none;display:flex;align-items:center;padding:0 15px;gap:6px}
+.cal-title{flex:1;text-align:center;font-size:19px;font-weight:700;letter-spacing:-.2px}
+.cal-weekdays{flex:none;display:grid;grid-template-columns:repeat(7,1fr);padding:0 9px 5px;font-size:11px;color:var(--text-2);text-align:center}
+.cal-days{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;padding:0 7px 9px;column-gap:2px}
+.cal-day{display:flex;align-items:flex-start;justify-content:center;padding-top:5px;border-radius:7px}
+.cal-day:hover{background:rgba(0,0,0,.045)}
+.cal-day .num{width:23px;height:23px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px}
+.cal-day.other .num{color:var(--text-3)}
+.cal-day.today .num{background:var(--red);color:#fff}
+.cal-day.sel .num{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(0,122,255,.35)}
+.cal-day.today.sel .num{background:var(--accent)}
+
+/* ============ About / Help ============ */
+.about{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;text-align:center;overflow:auto}
+.about .a-icon svg{width:84px;height:84px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.2))}
+.about h2{font-size:19px;margin-top:8px}
+.about .a-sub{color:var(--text-2);font-size:13px}
+.about .a-rows{width:100%;max-width:250px;margin-top:12px;font-size:12.5px}
+.about .a-row{display:flex;justify-content:space-between;padding:5px 2px;box-shadow:inset 0 .5px 0 var(--hair)}
+.about .a-row span:first-child{color:var(--text-2)}
+.help{flex:1;overflow:auto;padding:18px 24px;font-size:13.5px;line-height:1.7}
+.help h3{font-size:14.5px;margin:12px 0 4px}
+.help h3:first-child{margin-top:0}
+.help p{color:var(--text);margin-bottom:4px}
+.help .h-k{display:inline-block;padding:1px 7px;border-radius:5px;background:rgba(120,120,128,.16);font-size:12px;
+  box-shadow:inset 0 0 0 .5px rgba(0,0,0,.08)}
+
+/* ============ File Manager ============ */
+.fm{flex:1;display:flex;min-height:0}
+.fm-side{width:170px;flex:none;padding:8px 8px;overflow:auto;border-right:.5px solid var(--hair);background:rgba(246,246,248,.6)}
+.fm-side h4{font-size:11px;font-weight:600;color:var(--text-2);letter-spacing:.4px;margin:10px 8px 4px}
+.fm-side button{display:flex;align-items:center;gap:7px;width:100%;padding:5px 8px;border-radius:7px;font-size:13px}
+.fm-side button:hover{background:rgba(0,0,0,.05)}
+.fm-side button.on{background:rgba(0,122,255,.13)}
+.fm-side button.on, .fm-side button.on svg{color:var(--accent)}
+.fm-side svg{width:16px;height:16px;flex:none}
+.fm-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.fm-bar{display:flex;align-items:center;gap:3px;padding:5px 10px;border-bottom:.5px solid var(--hair);background:rgba(250,250,252,.55)}
+.fm-bar .sep{width:.5px;height:16px;background:var(--hair);margin:0 5px}
+.fm-path{display:flex;align-items:center;gap:1px;margin-left:6px;overflow:hidden;white-space:nowrap;min-width:0}
+.fm-path button{padding:2px 5px;border-radius:5px;font-size:12.5px;color:var(--text-2);flex:none}
+.fm-path button:hover{background:rgba(0,0,0,.06);color:var(--text)}
+.fm-path button:last-child{color:var(--text)}
+.fm-sep{color:var(--text-3);font-size:12px;flex:none}
+.fm-list{flex:1;overflow:auto;padding:4px 6px}
+.fm-cols{display:grid;grid-template-columns:1fr 92px 84px;gap:8px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--text-2);position:sticky;top:0;background:rgba(250,250,252,.94);border-bottom:.5px solid var(--hair)}
+.fm-row{display:grid;grid-template-columns:1fr 92px 84px;gap:8px;align-items:center;padding:5px 10px;border-radius:8px;font-size:13px}
+.fm-row:hover{background:rgba(0,0,0,.045)}
+.fm-row.sel{background:rgba(0,122,255,.14)}
+.fm-name{display:flex;align-items:center;gap:8px;min-width:0}
+.fm-name svg{width:20px;height:20px;flex:none}
+.fm-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fm-kind,.fm-size{color:var(--text-2);font-size:12px}
+.fm-status{display:flex;gap:10px;padding:5px 12px;font-size:11.5px;color:var(--text-2);border-top:.5px solid var(--hair);background:rgba(250,250,252,.6)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.danger:hover{background:#e5342a}
+.dlg{width:300px}
+.dlg-body{padding:14px}
+.dlg-body p{font-size:12px;color:var(--text-2);margin-bottom:6px}
+.dlg-body input{width:100%;height:28px;border:.5px solid var(--hair-strong);border-radius:7px;padding:0 9px;font-size:13px;background:#fff}
+.dlg-body input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,122,255,.18)}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px;padding:11px 14px;box-shadow:inset 0 .5px 0 var(--hair)}
+
+/* ============ Paint ============ */
+.pt{flex:1;display:flex;flex-direction:column;min-height:0}
+.pt-bar{display:flex;align-items:center;gap:5px;padding:6px 10px;flex:none;flex-wrap:wrap;
+  border-bottom:.5px solid var(--hair);background:rgba(250,250,252,.6)}
+.pt-bar .sep{width:.5px;height:18px;background:var(--hair);margin:0 3px}
+.pt-tool{width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--text-2)}
+.pt-tool svg{width:17px;height:17px}
+.pt-tool:hover{background:rgba(120,120,128,.16);color:var(--text)}
+.pt-tool.on{background:rgba(0,122,255,.15);color:var(--accent)}
+.pt-sw{width:17px;height:17px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.2)}
+.pt-sw.on{outline:2px solid var(--accent);outline-offset:2px}
+.pt-bar input[type=color]{width:24px;height:24px;border:none;border-radius:6px;padding:0;background:none;cursor:pointer}
+.pt-bar input[type=range]{width:90px;accent-color:var(--accent)}
+.pt-size-label{font-size:11.5px;color:var(--text-2);min-width:36px;font-variant-numeric:tabular-nums}
+.pt-canvas-wrap{flex:1;min-height:0;margin:10px;border-radius:9px;overflow:hidden;
+  box-shadow:0 0 0 .5px rgba(0,0,0,.14),0 3px 14px rgba(0,0,0,.12);background:#fff}
+.pt-canvas{display:block;width:100%;height:100%;cursor:crosshair;touch-action:none}
+
+/* ============ Video Player ============ */
+.vp-wrap{flex:1;display:flex;min-height:0;background:#1c1c1e}
+.vp-side{width:170px;flex:none;background:rgba(250,250,250,.88);border-right:1px solid rgba(0,0,0,.08);overflow-y:auto;padding:8px}
+.vp-side h4{font-size:11px;font-weight:600;color:#8e8e93;margin:6px 8px 5px}
+.vp-item{display:flex;width:100%;gap:8px;align-items:center;padding:6px 8px;border:0;background:transparent;border-radius:7px;font:inherit;font-size:12.5px;color:#1d1d1f;text-align:left;cursor:pointer}
+.vp-item:hover{background:rgba(0,0,0,.05)}
+.vp-item.on{background:#0a84ff;color:#fff}
+.vp-thumb{width:44px;height:27px;border-radius:4px;flex:none}
+.vp-main{flex:1;display:flex;flex-direction:column;min-width:0;background:#141414}
+.vp-screen{flex:1;min-height:0;position:relative;overflow:hidden}
+.vp-screen canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.vp-ctl{flex:none;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(28,28,30,.94);color:#f5f5f7}
+.vp-btn{width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transition:background .15s,transform .1s}
+.vp-btn:hover{background:rgba(255,255,255,.26)}
+.vp-btn:active{transform:scale(.94)}
+.vp-btn svg{width:15px;height:15px}
+.vp-time{font-size:11.5px;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.85);flex:none;min-width:36px;text-align:center}
+.vp-track{flex:1;height:22px;display:flex;align-items:center;cursor:pointer;position:relative;touch-action:none}
+.vp-rail{height:4px;width:100%;border-radius:2px;background:rgba(255,255,255,.22);overflow:hidden}
+.vp-fill{height:100%;width:0%;border-radius:2px;background:#fff}
+.vp-speed{flex:none;border:0;background:transparent;color:rgba(255,255,255,.85);font:inherit;font-size:11.5px;font-variant-numeric:tabular-nums;padding:4px 7px;border-radius:6px;cursor:pointer}
+.vp-speed:hover{background:rgba(255,255,255,.14)}
+
+/* ============ Python Terminal ============ */
+.tm-body{flex:1;min-height:0;overflow-y:auto;background:rgba(18,18,22,.97);padding:12px 14px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5;color:#e8e8ed;cursor:text}
+.tm-out{white-space:pre-wrap;word-break:break-word}
+.tm-line{padding:1px 0;border-radius:4px}
+.tm-line.in{color:#f5f5f7}
+.tm-line.out{color:#d5d5da}
+.tm-line.res{color:#30d158}
+.tm-line.err{color:#ff6961}
+.tm-ps1{color:#30d158;flex:none;user-select:none}
+.tm-row{display:flex;gap:8px;align-items:baseline;padding-top:2px}
+.tm-in{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#f5f5f7;font:inherit;caret-color:#30d158;padding:0}
+
+</style>
+</head>
+<body>
+<div id="wallpaper">
+  <svg id="wp-waves" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="wg1" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffd9a8"/><stop offset=".5" stop-color="#ff9ec4"/><stop offset="1" stop-color="#b39df5"/>
+      </linearGradient>
+      <linearGradient id="wg2" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#8fb8f2"/><stop offset="1" stop-color="#e7b6f0"/>
+      </linearGradient>
+    </defs>
+    <path fill="url(#wg1)" opacity=".55" d="M0,700 C240,560 420,720 640,640 C880,552 1080,700 1300,610 C1440,550 1560,600 1600,580 L1600,1000 L0,1000 Z"/>
+    <path fill="url(#wg2)" opacity=".45" d="M0,800 C220,700 480,830 720,760 C980,684 1200,820 1420,740 C1520,704 1600,730 1600,730 L1600,1000 L0,1000 Z"/>
+    <path fill="#fff" opacity=".10" d="M0,880 C260,810 520,920 800,870 C1080,820 1340,930 1600,880 L1600,1000 L0,1000 Z"/>
+  </svg>
+</div>
+<div id="desktop"></div>
+
+<nav id="menubar" aria-label="Menu bar">
+  <div id="mb-left">
+    <button class="mb-item" id="mb-apple" aria-label="Apple menu">
+      <svg viewBox="0 0 24 24"><path d="M17.05 12.53c-.02-2.2 1.79-3.26 1.87-3.31-1.02-1.49-2.61-1.7-3.17-1.72-1.35-.14-2.63.79-3.31.79-.69 0-1.74-.77-2.86-.75-1.47.02-2.83.86-3.59 2.17-1.53 2.66-.39 6.6 1.11 8.76.73 1.06 1.6 2.24 2.75 2.2 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.71.71 2.88.69 1.19-.02 1.95-1.08 2.68-2.14.84-1.22 1.19-2.4 1.21-2.46-.03-.01-2.33-.89-2.42-3.52zM14.94 5.3c.6-.73 1.01-1.75.9-2.76-.87.04-1.93.58-2.56 1.31-.56.65-1.05 1.69-.92 2.68.97.08 1.97-.5 2.58-1.23z"/></svg>
+    </button>
+    <button class="mb-item mb-app" id="mb-appname">Finder</button>
+    <span id="mb-menus"></span>
+  </div>
+  <div id="mb-right">
+    <button class="mb-item" id="mb-battery" aria-label="Battery"></button>
+    <button class="mb-item" id="mb-wifi" aria-label="Wi-Fi"></button>
+    <button class="mb-item" id="mb-cc" aria-label="Control Center"></button>
+    <button class="mb-item" id="mb-date" aria-label="Date and time"></button>
+  </div>
+</nav>
+
+<div id="dock-wrap">
+  <div id="dock" role="toolbar" aria-label="Dock"></div>
+</div>
+
+<div id="toast" role="status"></div>
+<div id="dim-overlay"></div>
+<div id="sleep-overlay"><div class="sleep-hint">Click anywhere to wake</div></div>
+<div id="shutdown-overlay">
+  <div class="sd-inner">
+    <button id="sd-power" aria-label="Power on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v8"/><path d="M17.3 6.4a8 8 0 1 1-10.6 0"/></svg>
+    </button>
+    <div class="sd-label">WebOS</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================================================================
+   WebOS — a macOS-Sonoma-style desktop in one file.
+   Core: state store, virtual file system, window manager, shell.
+   ================================================================ */
+
+/* ---------- tiny DOM helpers ---------- */
+const $  = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    if (k === "class") n.className = attrs[k];
+    else if (k === "html") n.innerHTML = attrs[k];
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), attrs[k]);
+    else if (k === "style") n.style.cssText = attrs[k];
+    else n.setAttribute(k, attrs[k]);
+  }
+  for (const kid of kids) if (kid != null) n.append(kid);
+  return n;
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+/* ---------- UI sounds (WebAudio synth, no assets) ---------- */
+const Sound = (() => {
+  let ctx = null;
+  const ensure = () => { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ctx; };
+  function tone(freq, dur, type, gainV, delay) {
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime + (delay || 0);
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = type || "sine"; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gainV || 0.05, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(c.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.05);
+  }
+  return {
+    open()  { tone(520, 0.09, "sine", 0.04); tone(780, 0.11, "sine", 0.035, 0.05); },
+    close() { tone(640, 0.07, "sine", 0.035); tone(420, 0.09, "sine", 0.03, 0.04); },
+    minimize() { tone(880, 0.05, "sine", 0.028); tone(660, 0.06, "sine", 0.024, 0.045); },
+    toggle() { tone(700, 0.045, "triangle", 0.03); },
+    click()  { tone(1200, 0.025, "sine", 0.02); }
+  };
+})();
+
+/* ---------- persisted state ---------- */
+const Store = {
+  KEY: "webos.state.v1",
+  data: { wallpaper: 0, darkAppearance: false, wifi: true, editorText: "", editorSaved: false, volume: 65, brightness: 100 },
+  load() {
+    try { const raw = localStorage.getItem(this.KEY);
+      if (raw) this.data = Object.assign(this.data, JSON.parse(raw));
+    } catch (e) {}
+  },
+  save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {} }
+};
+Store.load();
+
+/* ---------- virtual file system (for File Manager & Editor) ---------- */
+const VFS = {
+  KEY: "webos.vfs.v1",
+  root: null,
+  fresh() {
+    return {
+      name: "Macintosh HD", type: "folder", children: [
+        { name: "Documents", type: "folder", children: [
+          { name: "Welcome.txt", type: "txt", content: "Welcome to WebOS!\n\nThis entire desktop — wallpaper, menu bar, dock, windows and every app — lives inside one single HTML file with zero external resources.\n\nThings to try:\n- Drag windows by their title bar; double-click a title bar to zoom.\n- Use the traffic-light buttons to close, minimize and zoom.\n- Open Terminal and type help.\n- Doodle something in Paint.\n- Everything you save is kept in localStorage." },
+          { name: "Notes.txt", type: "txt", content: "Shopping list\n- Espresso beans\n- Sonoma wallpaper poster\n- USB-C cable" }
+        ]},
+        { name: "Desktop", type: "folder", children: [] },
+        { name: "Downloads", type: "folder", children: [] },
+        { name: "Pictures", type: "folder", children: [
+          { name: "trip-plan.txt", type: "txt", content: "Big Sur weekend:\nFriday - drive down Highway 1\nSaturday - Bixby Bridge at sunrise\nSunday - Nepenthe for lunch" }
+        ]},
+        { name: "readme.txt", type: "txt", content: "The virtual disk persists in your browser's localStorage.\nCreate folders and text files from the File Manager toolbar." }
+      ]
+    };
+  },
+  load() {
+    try { const raw = localStorage.getItem(this.KEY); if (raw) this.root = JSON.parse(raw); } catch (e) {}
+    if (!this.root) this.root = this.fresh();
+  },
+  save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.root)); } catch (e) {} }
+};
+VFS.load();
+function vfsFind(path) {           // path = array like ["Documents","Welcome.txt"]
+  let node = VFS.root;
+  for (const seg of path) {
+    if (!node.children) return null;
+    node = node.children.find(c => c.name === seg);
+    if (!node) return null;
+  }
+  return node;
+}
+function vfsParent(path) { return vfsFind(path.slice(0, -1)); }
+function vfsUniqueName(folder, base, ext) {
+  const exists = n => folder.children.some(c => c.name === n);
+  if (!exists(base + ext)) return base + ext;
+  let i = 2; while (exists(base + " " + i + ext)) i++;
+  return base + " " + i + ext;
+}
+
+/* ---------- icon library (inline SVG, no emoji) ---------- */
+function svgi(paths, vb) {
+  return '<svg viewBox="' + (vb || "0 0 24 24") + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + paths + "</svg>";
+}
+const ICONS = {
+  wifi: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 18.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5zM12 12.6c-2 0-3.9.8-5.3 2.2l1.8 1.8c.9-.9 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.8-1.8c-1.4-1.4-3.3-2.2-5.3-2.2zM12 7c-3.4 0-6.5 1.3-8.8 3.6l1.8 1.8C6.9 10.5 9.3 9.4 12 9.4s5.1 1.1 7 3l1.8-1.8C18.5 8.3 15.4 7 12 7z"/></svg>',
+  wifiSlash: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 18.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5zm0-6.5c-1.3 0-2.5.4-3.5 1.1l1.7 1.7c.5-.4 1.2-.6 1.8-.6.7 0 1.3.2 1.8.6l1.7-1.7c-1-.7-2.2-1.1-3.5-1.1zm-3.5-3.6 1.5 1.5c.6-.3 1.3-.4 2-.4 2 0 3.9.8 5.3 2.2l1.8-1.8C17.6 7.9 14.9 6.8 12 6.8c-1.2 0-2.4.2-3.5.6zM2.1 4.9 3.5 3.5l17 17-1.4 1.4-3.2-3.2c-1.2.5-2.5.8-3.9.8-3.4 0-6.5-1.3-8.8-3.6l1.8-1.8c1.9 1.9 4.3 3 7 3 .9 0 1.8-.1 2.6-.4L13 14.9c-.3.1-.7.1-1 .1-1.3 0-2.6-.6-3.5-1.5L6.7 13c-.6.6-1.4 1-2.2 1.2L2.1 4.9z"/></svg>',
+  battery: '<svg viewBox="0 0 30 13" fill="none"><rect x=".5" y="1" width="24" height="11" rx="3" stroke="currentColor" opacity=".4"/><rect x="2" y="2.5" width="18" height="8" rx="1.6" fill="currentColor"/><path d="M26.2 4.5c1.3.5 1.3 3.5 0 4z" fill="currentColor" opacity=".4"/></svg>',
+  control: '<svg viewBox="0 0 16 16"><rect x="1" y="1" width="6.5" height="6.5" rx="2" fill="currentColor" opacity=".9"/><rect x="8.5" y="1" width="6.5" height="6.5" rx="2" fill="currentColor" opacity=".45"/><rect x="1" y="8.5" width="6.5" height="6.5" rx="2" fill="currentColor" opacity=".45"/><rect x="8.5" y="8.5" width="6.5" height="6.5" rx="2" fill="currentColor" opacity=".9"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  close: '<svg viewBox="0 0 12 12" stroke="#7a0a00" stroke-width="1.6" stroke-linecap="round"><path d="M3 3l6 6M9 3l-6 6"/></svg>',
+  min: '<svg viewBox="0 0 12 12" stroke="#7a5b00" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 6h7"/></svg>',
+  zoom: '<svg viewBox="0 0 12 12" fill="#0a5a17"><path d="M3 7.5V5.8c0-.3.4-.5.6-.3L6 7.9c.2.2 0 .6-.3.6H4C3.4 8.5 3 8.1 3 7.5z"/><path d="M9 4.5v1.7c0 .3-.4.5-.6.3L6 4.1c-.2-.2 0-.6.3-.6H8c.6 0 1 .4 1 1z"/></svg>',
+  chevL: svgi('<path d="M15 5l-7 7 7 7"/>'),
+  chevR: svgi('<path d="M9 5l7 7-7 7"/>'),
+  folder: '<svg viewBox="0 0 24 24"><defs><linearGradient id="fg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ec8f5"/><stop offset="1" stop-color="#4aa3ee"/></linearGradient></defs><path d="M2.5 6.5A2 2 0 0 1 4.5 4.5h4.2c.6 0 1.1.25 1.5.7l1 1.2h8.3a2 2 0 0 1 2 2v9.1a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-11z" fill="url(#fg1)"/><path d="M2.5 9.5h19v7.9a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V9.5z" fill="#6cb7f0" opacity=".5"/></svg>',
+  fileText: '<svg viewBox="0 0 24 24"><path d="M5 3.5A1.5 1.5 0 0 1 6.5 2h7L19 7.5V20a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20V3.5z" fill="#fff" stroke="#c9c9ce" stroke-width="1.2"/><path d="M13 2v6h6" fill="#eef2f7" stroke="#c9c9ce" stroke-width="1.2"/><path d="M8 13h8M8 16.5h8M8 9.5h3" stroke="#8fa8c8" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  newFolder: svgi('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M12 11v5M9.5 13.5h5"/>'),
+  newFile: svgi('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M12 12v5M9.5 14.5h5"/>'),
+  trash: svgi('<path d="M4 7h16M10 4h4M6 7l1 13a1.5 1.5 0 0 0 1.5 1.4h7A1.5 1.5 0 0 0 17 20l1-13"/><path d="M10 11v6M14 11v6"/>'),
+  save: svgi('<path d="M5 3h11l3 3v15H5V3z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>'),
+  bold: svgi('<path d="M7 4h6a3.5 3.5 0 0 1 0 7H7zM7 11h7a3.5 3.5 0 0 1 0 7H7z"/>'),
+  italic: svgi('<path d="M10 4h8M6 20h8M14.5 4 9.5 20"/>'),
+  underline: svgi('<path d="M7 4v6a5 5 0 0 0 10 0V4M5.5 21h13"/>'),
+  play: svgi('<path d="M7 5.5v13l11-6.5z" fill="currentColor" stroke="none"/>'),
+  pause: svgi('<path d="M8 5v14M16 5v14"/>'),
+  stop: svgi('<rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" stroke="none"/>'),
+  brush: svgi('<path d="M17.5 3.5 20.5 6.5 11 16l-3-3zM8 13l-2.5 2.5c-1 1-1 3 0 4s3 1 4 0L12 17"/>'),
+  eraser: svgi('<path d="m8 20-4.5-4.5a2 2 0 0 1 0-2.8L13 3.2a2 2 0 0 1 2.8 0l5 5a2 2 0 0 1 0 2.8L11.5 20"/><path d="M8 20h13"/><path d="m7.5 8.5 8 8"/>'),
+  grid: svgi('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'),
+  lock: svgi('<rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5"/>'),
+  volume: svgi('<path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor" stroke="none"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>'),
+  sun: svgi('<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.8 1.8M17.2 17.2 19 19M19 5l-1.8 1.8M6.8 17.2 5 19"/>'),
+  moon: svgi('<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>')
+};
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+/* ================================================================
+   Window manager
+   ================================================================ */
+const WM = {
+  zTop: 100, windows: new Map(), seq: 0,
+  bounds() {
+    const top = 40 /* menubar */, bottom = 86 /* dock clearance */;
+    return { x: 8, y: top + 6, w: window.innerWidth - 16, h: window.innerHeight - top - bottom };
+  },
+  clampXy(win, x, y) {
+    const b = this.bounds();
+    x = Math.max(-win.w + 90, Math.min(x, window.innerWidth - 90));
+    y = Math.max(b.y - 8, Math.min(y, window.innerHeight - 40));
+    return { x, y };
+  },
+  focus(win) {
+    if (!win) return;
+    if (ActiveApp.id === win.appId && this.topWin() === win) return;
+    win.el.style.zIndex = ++this.zTop;
+    for (const w of this.windows.values()) w.el.classList.add("inactive");
+    win.el.classList.remove("inactive");
+    Shell.setActive(win.appId);
+  },
+  topWin() {
+    let best = null;
+    for (const w of this.windows.values()) if (!best || w.el.style.zIndex > best.el.style.zIndex) best = w;
+    return best;
+  },
+  open(appId) {
+    const app = Apps[appId];
+    if (!app) return;
+    const existing = Array.from(this.windows.values()).find(w => w.appId === appId && !app.multi);
+    if (existing) { if (existing.minimized) this.unminimize(existing); this.focus(existing); return existing; }
+    const id = "w" + (++this.seq);
+    const b = this.bounds();
+    let w = Math.min(app.width || 560, b.w), h = Math.min(app.height || 400, b.h);
+    const openCount = Array.from(this.windows.values()).filter(x => x.appId === appId).length;
+    let x = b.x + Math.max(0, (b.w - w) / 2) + (openCount % 5) * 26 - 52;
+    let y = b.y + Math.max(0, (b.h - h) / 2.4) + (openCount % 5) * 22 - 44;
+    x = Math.max(b.x, x); y = Math.max(b.y, y);
+    const root = el("section", { class: "window opening", id: id, tabindex: "-1", style: `left:${x}px;top:${y}px;width:${w}px;height:${h}px` });
+    root.innerHTML =
+      '<div class="titlebar">' +
+        '<div class="traffic">' +
+          '<button class="tl tl-close" aria-label="Close">' + ICONS.close + "</button>" +
+          '<button class="tl tl-min" aria-label="Minimize">' + ICONS.min + "</button>" +
+          '<button class="tl tl-zoom" aria-label="Zoom">' + ICONS.zoom + "</button>" +
+        "</div>" +
+        '<div class="w-title">' + esc(app.title) + "</div>" +
+      "</div>" +
+      '<div class="w-content"></div>' +
+      '<div class="resize-h"></div>';
+    $("#desktop").append(root);
+    const win = { id, appId, el: root, x, y, w, h, minimized: false, restore: null, title: app.title,
+      setTitle(t) { this.title = t; root.querySelector(".w-title").textContent = t; Shell.syncMenuTitles(); } };
+    this.windows.set(id, win);
+    root.addEventListener("mousedown", () => this.focus(win), true);
+    root.querySelector(".tl-close").addEventListener("click", e => { e.stopPropagation(); this.close(win); });
+    root.querySelector(".tl-min").addEventListener("click", e => { e.stopPropagation(); this.minimize(win); });
+    root.querySelector(".tl-zoom").addEventListener("click", e => { e.stopPropagation(); this.zoom(win); });
+    this.makeDraggable(win);
+    this.makeResizable(win);
+    try { app.mount(root.querySelector(".w-content"), win); } catch (err) { console.error(err); }
+    this.focus(win);
+    Sound.open();
+    Dock.update();
+    setTimeout(() => root.classList.remove("opening"), 260);
+    return win;
+  },
+  close(win) {
+    if (!win) return;
+    const app = Apps[win.appId];
+    if (app && app.onClose) try { app.onClose(win); } catch (e) {}
+    win.el.remove();
+    this.windows.delete(win.id);
+    Sound.close();
+    const next = this.topWin();
+    Shell.setActive(next ? next.appId : null);
+    Dock.update();
+  },
+  minimize(win) {
+    if (!win || win.minimized) return;
+    win.minimized = true;
+    win.el.style.display = "none";
+    Sound.minimize();
+    const next = this.topWin();
+    Shell.setActive(next ? next.appId : null);
+    Dock.update();
+  },
+  unminimize(win) {
+    win.minimized = false;
+    win.el.style.display = "";
+    this.focus(win);
+    Sound.open();
+    Dock.update();
+  },
+  zoom(win) {
+    if (win.restore) {
+      const r = win.restore; win.restore = null;
+      this.applyGeom(win, r.x, r.y, r.w, r.h);
+    } else {
+      win.restore = { x: win.x, y: win.y, w: win.w, h: win.h };
+      const b = this.bounds();
+      this.applyGeom(win, b.x + 12, b.y + 6, b.w - 24, b.h - 12);
+    }
+    win.onResize && win.onResize();
+  },
+  applyGeom(win, x, y, w, h) {
+    win.x = x; win.y = y; win.w = w; win.h = h;
+    win.el.style.left = x + "px"; win.el.style.top = y + "px";
+    win.el.style.width = w + "px"; win.el.style.height = h + "px";
+  },
+  makeDraggable(win) {
+    const bar = win.el.querySelector(".titlebar");
+    bar.addEventListener("mousedown", e => {
+      if (e.target.closest(".tl")) return;
+      if (e.detail === 2) { this.zoom(win); return; }   // double-click zoom
+      const sx = e.clientX, sy = e.clientY, ox = win.x, oy = win.y;
+      win.el.style.transition = "none";
+      const mv = ev => {
+        const p = this.clampXy(win, ox + ev.clientX - sx, oy + ev.clientY - sy);
+        win.x = p.x; win.y = p.y;
+        win.el.style.left = p.x + "px"; win.el.style.top = p.y + "px";
+      };
+      const up = () => {
+        removeEventListener("mousemove", mv); removeEventListener("mouseup", up);
+        win.el.style.transition = "";
+      };
+      addEventListener("mousemove", mv); addEventListener("mouseup", up);
+      e.preventDefault();
+    });
+  },
+  makeResizable(win) {
+    const grip = win.el.querySelector(".resize-h");
+    grip.addEventListener("mousedown", e => {
+      const sx = e.clientX, sy = e.clientY, ow = win.w, oh = win.h;
+      const minW = Apps[win.appId].minW || 320, minH = Apps[win.appId].minH || 220;
+      const mv = ev => {
+        const w = Math.max(minW, Math.min(ow + ev.clientX - sx, window.innerWidth - win.x - 4));
+        const h = Math.max(minH, Math.min(oh + ev.clientY - sy, window.innerHeight - win.y - 4));
+        win.w = w; win.h = h;
+        win.el.style.width = w + "px"; win.el.style.height = h + "px";
+        win.onResize && win.onResize();
+      };
+      const up = () => { removeEventListener("mousemove", mv); removeEventListener("mouseup", up); };
+      addEventListener("mousemove", mv); addEventListener("mouseup", up);
+      e.stopPropagation(); e.preventDefault();
+    });
+  }
+};
+
+/* ================================================================
+   Dock
+   ================================================================ */
+const Dock = {
+  order: ["files", "editor", "terminal", "paint", "video", "calendar", "calc", "trash"],
+  init() {
+    const dock = $("#dock");
+    dock.innerHTML = "";
+    for (const id of this.order) {
+      const app = id === "trash" ? TRASH_APP : Apps[id];
+      if (!app) continue;
+      const btn = el("button", { class: "dock-icon", "aria-label": app.title, title: "" },
+        el("span", { class: "tip" }, app.title),
+        el("span", { html: app.icon }),
+        el("span", { class: "dot" })
+      );
+      btn.dataset.app = id;
+      btn.addEventListener("click", () => {
+        Sound.click();
+        const win = Array.from(WM.windows.values()).filter(w => w.appId === id).sort((a, b) => (b.el.style.zIndex || 0) - (a.el.style.zIndex || 0))[0];
+        if (!win) { id === "trash" ? toast("Trash is empty") : WM.open(id); return; }
+        if (win.minimized) WM.unminimize(win);
+        else if (WM.topWin() === win && !win.minimized) WM.minimize(win);
+        else WM.focus(win);
+      });
+      dock.append(btn);
+    }
+    this.update();
+    this.magnify();
+  },
+  update() {
+    const running = new Set(Array.from(WM.windows.values()).map(w => w.appId));
+    $$(".dock-icon").forEach(btn => btn.classList.toggle("running", running.has(btn.dataset.app)));
+  },
+  magnify() {
+    const dock = $("#dock");
+    dock.addEventListener("mousemove", e => {
+      const icons = $$(".dock-icon", dock);
+      for (const ic of icons) {
+        const r = ic.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const d = Math.abs(e.clientX - cx);
+        const s = d < 140 ? 1 + 0.55 * Math.pow(Math.cos((Math.min(d, 140) / 140) * (Math.PI / 2)), 2.2) : 1;
+        ic.style.transform = "scale(" + s.toFixed(3) + ")";
+      }
+    });
+    dock.addEventListener("mouseleave", () => $$(".dock-icon", dock).forEach(ic => ic.style.transform = ""));
+  }
+};
+const TRASH_APP = {
+  title: "Trash",
+  icon: '<svg viewBox="0 0 24 24"><defs><linearGradient id="tg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfd6de" stop-opacity=".95"/><stop offset="1" stop-color="#98a2ae"/></linearGradient></defs><path d="M7.5 7h9l-.9 12.1a2 2 0 0 1-2 1.9h-3.2a2 2 0 0 1-2-1.9L7.5 7z" fill="url(#tg1)" stroke="rgba(0,0,0,.18)"/><path d="M6 5.2h12M10 5V3.8c0-.4.3-.8.8-.8h2.4c.5 0 .8.4.8.8V5" stroke="#7d8794" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M10.5 10v8M13.5 10v8" stroke="#6f7885" stroke-width="1.4" stroke-linecap="round"/></svg>'
+};
+
+/* ================================================================
+   Shell — menu bar, menus, Control Center, clock
+   ================================================================ */
+const ActiveApp = { id: null };
+
+const Shell = {
+  menuCache: null,
+  init() {
+    this.clock();
+    setInterval(() => this.clock(), 1000 * 20);
+    this.rightIcons();
+    this.wireButtons();
+    this.globalDismiss();
+    this.setActive(null);
+    this.applyAppearance();
+    document.addEventListener("click", e => {
+      if (e.target.closest("#menubar") || e.target.closest(".menu-dropdown") || e.target.closest("#cc-pop")) return;
+      this.closeMenus();
+    });
+    $("#sd-power").addEventListener("click", () => this.bootOn());
+  },
+  clock() {
+    const d = new Date();
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const fmt = (n) => (n < 10 ? "0" + n : n);
+    const h12 = d.getHours() % 12 || 12;
+    const ampm = d.getHours() >= 12 ? "PM" : "AM";
+    $("#mb-date").innerHTML =
+      '<span>' + days[d.getDay()] + " " + (d.getMonth() + 1) + "/" + d.getDate() + '</span>&nbsp;&nbsp;<span style="font-variant-numeric:tabular-nums">' +
+      h12 + ":" + fmt(d.getMinutes()) + " " + ampm + "</span>";
+    $$("[data-wall-clock]").forEach(n => { n.textContent = h12 + ":" + fmt(d.getMinutes()); });
+  },
+  rightIcons() {
+    $("#mb-battery").innerHTML = ICONS.battery + '<span style="font-size:12px;margin-left:4px">87%</span>';
+    this.wifiIcon();
+  },
+  wifiIcon() { $("#mb-wifi").classList.toggle("off", !Store.data.wifi); $("#mb-wifi").innerHTML = Store.data.wifi ? ICONS.wifi : ICONS.wifiSlash; },
+  wireButtons() {
+    $("#mb-apple").addEventListener("click", e => { e.stopPropagation(); this.toggleMenu("apple", e.currentTarget); });
+    $("#mb-appname").addEventListener("click", e => { e.stopPropagation(); this.toggleMenu("app", e.currentTarget); });
+    $("#mb-wifi").addEventListener("click", e => { e.stopPropagation(); this.toggleMenu("wifi", e.currentTarget); });
+    $("#mb-cc").addEventListener("click", e => { e.stopPropagation(); this.toggleMenu("cc", e.currentTarget); });
+    $("#mb-battery").addEventListener("click", e => { e.stopPropagation(); this.toggleMenu("battery", e.currentTarget); });
+    $("#sleep-overlay").addEventListener("click", () => { $("#sleep-overlay").classList.remove("on"); Sound.toggle(); });
+  },
+  globalDismiss() {
+    document.addEventListener("keydown", e => { if (e.key === "Escape") this.closeMenus(); });
+  },
+  closeMenus() {
+    $$(".menu-dropdown").forEach(n => n.remove());
+    $("#cc-pop") && $("#cc-pop").remove();
+    $$(".mb-item").forEach(n => n.classList.remove("open"));
+    $("#dim-overlay").style.opacity = 0;
+  },
+  toggleMenu(kind, anchor) {
+    const wasOpen = anchor.classList.contains("open");
+    this.closeMenus();
+    if (wasOpen) return;
+    anchor.classList.add("open");
+    Sound.click();
+    if (kind === "cc") return this.controlCenter(anchor);
+    const dd = el("div", { class: "menu-dropdown" });
+    const items = this.menuItems(kind);
+    for (const it of items) {
+      if (it === "-") { dd.append(el("div", { class: "msep" })); continue; }
+      const row = el("button", { class: "mi" + (it.disabled ? " disabled" : "") },
+        el("span", {}, it.label), it.sc ? el("span", { class: "mi-sc" }, it.sc) : null);
+      if (!it.disabled && it.fn) row.addEventListener("click", () => { this.closeMenus(); it.fn(); });
+      dd.append(row);
+    }
+    document.body.append(dd);
+    const r = anchor.getBoundingClientRect();
+    dd.style.left = Math.min(r.left, window.innerWidth - dd.offsetWidth - 8) + "px";
+  },
+  menuItems(kind) {
+    const app = ActiveApp.id ? Apps[ActiveApp.id] : null;
+    if (kind === "apple") return [
+      { label: "About This Mac", fn: () => WM.open("about") },
+      "-", { label: "System Settings…", fn: () => WM.open("about"), sc: "" },
+      "-",
+      { label: "Sleep", fn: () => this.sleep() },
+      { label: "Restart…", fn: () => this.restart() },
+      { label: "Shut Down…", fn: () => this.shutdown() },
+      "-",
+      { label: "Lock Screen", sc: "⌃⌘Q", fn: () => this.sleep() }
+    ];
+    if (kind === "app") {
+      if (!app) return [
+        { label: "About WebOS", fn: () => WM.open("about") },
+        "-", { label: "Close Window", sc: "⌘W", disabled: true }
+      ];
+      const base = [
+        { label: "About " + app.title, fn: () => WM.open("about") },
+        "-"
+      ];
+      const quit = [{ label: "Quit " + app.title, sc: "⌘Q", fn: () => this.quitApp(ActiveApp.id) }];
+      if (app.menu && ActiveApp.id && this.menuCache && this.menuCache.id === ActiveApp.id) {
+        return base.concat(this.menuCache.items, ["-"], quit);
+      }
+      return base.concat(quit);
+    }
+    if (kind === "wifi") return [
+      { label: "Wi-Fi", sc: Store.data.wifi ? "On" : "Off", fn: () => { Store.data.wifi = !Store.data.wifi; Store.save(); this.wifiIcon(); toast("Wi-Fi " + (Store.data.wifi ? "on" : "off")); } },
+      "-",
+      { label: "Sonoma-5G", disabled: !Store.data.wifi },
+      { label: "Guest-Network", disabled: !Store.data.wifi },
+      { label: "CoffeeShopWiFi", disabled: !Store.data.wifi }
+    ];
+    if (kind === "battery") return [
+      { label: "Battery — 87%", disabled: true },
+      "-", { label: "Power Source: Battery", disabled: true },
+      { label: "Low Power Mode", fn: () => toast("Low Power Mode enabled") }
+    ];
+    return [];
+  },
+  setAppMenu(appId) {
+    const app = appId ? Apps[appId] : null;
+    this.menuCache = app && app.menu ? { id: appId, items: app.menu() } : null;
+    this.syncMenuTitles();
+  },
+  syncMenuTitles() {
+    const span = $("#mb-menus");
+    if (!ActiveApp.id || !Apps[ActiveApp.id] || !Apps[ActiveApp.id].menus) { span.innerHTML = ""; return; }
+    const titles = Apps[ActiveApp.id].menus();
+    span.innerHTML = titles.map(t => '<button class="mb-item mb-submenu" data-m="' + esc(t) + '">' + esc(t) + "</button>").join("");
+    $$(".mb-submenu", span).forEach(btn =>
+      btn.addEventListener("click", e => { e.stopPropagation(); toast(btn.dataset.m + " menu — demo item"); this.closeMenus(); }));
+  },
+  setActive(appId) {
+    ActiveApp.id = appId;
+    $("#mb-appname").textContent = appId && Apps[appId] ? Apps[appId].title : "Finder";
+    this.setAppMenu(appId);
+  },
+  quitApp(appId) {
+    const wins = Array.from(WM.windows.values()).filter(w => w.appId === appId);
+    wins.forEach(w => WM.close(w));
+  },
+  sleep() { this.closeMenus(); $("#sleep-overlay").classList.add("on"); },
+  restart() { this.closeMenus(); Store.save(); toast("Restarting…"); setTimeout(() => location.reload(), 700); },
+  shutdown() {
+    this.closeMenus();
+    const so = $("#shutdown-overlay");
+    so.classList.add("on");
+    $("#dim-overlay").style.opacity = 0;
+  },
+  bootOn() {
+    const so = $("#shutdown-overlay");
+    so.classList.remove("on");
+    Sound.open();
+    toast("Welcome back");
+  },
+  applyAppearance() {
+    document.body.classList.toggle("wp-alt", Store.data.wallpaper === 1);
+    if (Store.data.brightness < 100) $("#wallpaper").style.filter = "brightness(" + (0.45 + Store.data.brightness / 180) + ")";
+    else $("#wallpaper").style.filter = "";
+  },
+  controlCenter(anchor) {
+    const pop = el("div", { id: "cc-pop" });
+    const wifiIco = el("div", { class: "cc-ico" + (Store.data.wifi ? "" : " off"), html: ICONS.wifi });
+    const wifiItem = el("div", { class: "cc-item" }, wifiIco,
+      el("div", { class: "cc-txt" }, el("b", {}, "Wi-Fi"), el("span", {}, Store.data.wifi ? "Sonoma-5G" : "Off")),
+      el("label", { class: "switch" }, el("input", { type: "checkbox" }), el("span", { class: "knob" })));
+    const cb = $("input", wifiItem); cb.checked = Store.data.wifi;
+    cb.addEventListener("change", () => { Store.data.wifi = cb.checked; Store.save(); wifiIco.classList.toggle("off", !cb.checked);
+      wifiIco.innerHTML = cb.checked ? ICONS.wifi : ICONS.wifiSlash; this.wifiIcon();
+      $("span", wifiItem.querySelector(".cc-txt")).textContent = cb.checked ? "Sonoma-5G" : "Off"; Sound.toggle(); });
+    const vol = el("input", { type: "range", min: "0", max: "100", value: String(Store.data.volume) });
+    vol.addEventListener("input", () => { Store.data.volume = +vol.value; Store.save(); });
+    const bri = el("input", { type: "range", min: "30", max: "100", value: String(Store.data.brightness) });
+    bri.addEventListener("input", () => { Store.data.brightness = +bri.value; Store.save(); this.applyAppearance(); });
+    pop.append(
+      wifiItem,
+      el("div", { class: "cc-item cc-col" },
+        el("div", { class: "cc-head" }, el("span", {}, "Display"), el("span", { class: "cc-mini", html: ICONS.sun })),
+        bri),
+      el("div", { class: "cc-item cc-col" },
+        el("div", { class: "cc-head" }, el("span", {}, "Sound"), el("span", { class: "cc-mini", html: ICONS.volume })),
+        vol),
+      el("div", { class: "cc-item cc-col" },
+        el("div", { class: "cc-head" }, el("span", {}, "Wallpaper")),
+        el("div", { class: "cc-walls" },
+          ...[0, 1].map(i => {
+            const w = el("button", { class: "cc-wall w" + (i + 1) + (Store.data.wallpaper === i ? " on" : ""), "aria-label": "Wallpaper " + (i + 1) });
+            w.addEventListener("click", () => { Store.data.wallpaper = i; Store.save(); this.applyAppearance();
+              $$(".cc-wall", pop).forEach(x => x.classList.remove("on")); w.classList.add("on"); });
+            return w;
+          })))
+    );
+    document.body.append(pop);
+  }
+};
+
+/* ================================================================
+   App registry
+   ================================================================ */
+const Apps = {};
+
+/* ---------------- Calculator ---------------- */
+Apps.calc = {
+  title: "Calculator",
+  width: 252, height: 376, minW: 220, minH: 320,
+  icon: '<svg viewBox="0 0 24 24"><defs><linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a3f"/><stop offset="1" stop-color="#1d1d21"/></linearGradient></defs><rect x="3" y="2" width="18" height="20" rx="4" fill="url(#cg1)"/><rect x="5" y="4" width="14" height="4.4" rx="1.4" fill="#0f0f12"/><text x="18.4" y="7.6" text-anchor="end" font-family="-apple-system,Helvetica" font-size="3.2" fill="#8de88d">0</text><g fill="#8e8e93"><rect x="5" y="9.8" width="3.1" height="2.6" rx="0.8"/><rect x="10.45" y="9.8" width="3.1" height="2.6" rx="0.8"/><rect x="5" y="13.6" width="3.1" height="2.6" rx="0.8"/><rect x="10.45" y="13.6" width="3.1" height="2.6" rx="0.8"/><rect x="5" y="17.4" width="3.1" height="2.6" rx="0.8"/><rect x="10.45" y="17.4" width="3.1" height="2.6" rx="0.8"/><rect x="15.9" y="9.8" width="3.1" height="2.6" rx="0.8" fill="#ff9f0a"/><rect x="15.9" y="13.6" width="3.1" height="2.6" rx="0.8" fill="#ff9f0a"/><rect x="15.9" y="17.4" width="3.1" height="2.6" rx="0.8" fill="#ff9f0a"/></g></svg>',
+  menus: () => ["File", "Edit"],
+  menu: () => [
+    { label: "Clear", sc: "Esc", fn: () => { const w = topCalcWin(); if (w) w.calc.reset(); } }
+  ],
+  mount(root, win) {
+    const state = { acc: null, op: null, cur: "0", fresh: true, lastOp: null, repeatAcc: null };
+    const disp = el("div", { class: "calc-display", role: "status", "aria-live": "polite" }, "0");
+    const fmt = (numStr) => {
+      if (numStr === "Error") return "Error";
+      const n = Number(numStr);
+      if (!isFinite(n)) return "Error";
+      if (Math.abs(n) >= 1e12 || (n !== 0 && Math.abs(n) < 1e-9)) return n.toExponential(6).replace(/(\.\d*?)0+e/, "$1e").replace(/\.e/, "e");
+      const [i, d] = String(n).split(".");
+      const ii = Number(i).toLocaleString("en-US");
+      return d !== undefined ? ii + "." + d : (n < 0 && n > -1 ? "-" + ii.replace("-", "") : ii);
+    };
+    const show = () => { disp.textContent = state.fresh && state.cur === "0" && !state.acc ? "0" : fmt(state.cur); disp.style.fontSize = disp.textContent.length > 9 ? "34px" : "46px"; };
+    function apply(a, b, op) {
+      switch (op) {
+        case "+": return a + b; case "−": return a - b;
+        case "×": return a * b; case "÷": return b === 0 ? NaN : a / b;
+      }
+      return b;
+    }
+    function digit(d) {
+      if (state.cur === "Error") state.cur = "0";
+      if (state.fresh) { state.cur = d === "." ? "0." : d; state.fresh = false; }
+      else {
+        if (d === "." && state.cur.includes(".")) return;
+        if (state.cur.replace(/[-.]/g, "").length >= 12) return;
+        state.cur = state.cur === "0" && d !== "." ? d : state.cur + d;
+      }
+    }
+    function setOp(op) {
+      if (state.cur === "Error") return;
+      const cur = Number(state.cur);
+      if (state.op && !state.fresh) {
+        const r = apply(state.acc, cur, state.op);
+        if (!isFinite(r)) { state.cur = "Error"; state.op = null; state.acc = null; show(); return; }
+        state.acc = r; state.cur = String(r);
+      } else if (state.acc === null || state.fresh) state.acc = cur;
+      state.op = op; state.fresh = true; state.lastOp = null;
+    }
+    function equals() {
+      if (state.cur === "Error") return;
+      let b;
+      if (state.lastOp) { b = Number(state.cur); state.acc = Number(state.cur); }
+      else if (state.op) { state.lastOp = state.op; state.repeatAcc = Number(state.cur); b = Number(state.cur); }
+      else return;
+      const r = apply(state.acc, state.repeatAcc !== null && state.lastOp ? state.repeatAcc : b, state.lastOp);
+      if (!isFinite(r)) { state.cur = "Error"; state.op = null; state.acc = null; show(); return; }
+      state.cur = String(r); state.acc = null; state.op = null; state.fresh = true;
+    }
+    function clearAll() { Object.assign(state, { acc: null, op: null, cur: "0", fresh: true, lastOp: null, repeatAcc: null }); show(); }
+    win.calc = { reset: clearAll };
+    function press(k) {
+      Sound.click();
+      if (/^[0-9.]$/.test(k)) digit(k);
+      else if (["+", "−", "×", "÷"].includes(k)) setOp(k);
+      else if (k === "=") equals();
+      else if (k === "AC") clearAll();
+      else if (k === "±") state.cur !== "Error" && (state.cur = String(Number(state.cur) * -1));
+      else if (k === "%") state.cur !== "Error" && (state.cur = String(Number(state.cur) / 100));
+      show();
+    }
+    const keys = [
+      ["AC", "fn"], ["±", "fn"], ["%", "fn"], ["÷", "op"],
+      ["7"], ["8"], ["9"], ["×", "op"],
+      ["4"], ["5"], ["6"], ["−", "op"],
+      ["1"], ["2"], ["3"], ["+", "op"],
+      ["0", "zero"], ["."], ["=", "op"]
+    ];
+    const grid = el("div", { class: "calc-grid" });
+    for (const [k, cls] of keys) {
+      const b = el("button", { class: "ck" + (cls ? " " + cls : ""), "aria-label": k === "." ? "point" : k }, k);
+      b.addEventListener("click", () => press(k));
+      grid.append(b);
+    }
+    const box = el("div", { class: "calc" }, disp, grid);
+    root.append(box);
+    win.el.addEventListener("keydown", e => {
+      const map = { "+": "+", "-": "−", "*": "×", "/": "÷", "Enter": "=", "=": "=", "Escape": "AC", "%": "%", ".": "." };
+      if (/^[0-9]$/.test(e.key)) { press(e.key); e.preventDefault(); }
+      else if (map[e.key]) { press(map[e.key]); e.preventDefault(); }
+      else if (e.key === "Backspace") { if (!state.fresh && state.cur.length > 1) { state.cur = state.cur.slice(0, -1); show(); } else clearAll(); e.preventDefault(); }
+    });
+    show();
+  }
+};
+function topCalcWin() {
+  return Array.from(WM.windows.values()).filter(w => w.appId === "calc").sort((a, b) => b.el.style.zIndex - a.el.style.zIndex)[0];
+}
+
+/* ---------------- Text Editor ---------------- */
+Apps.editor = {
+  title: "TextEdit",
+  width: 620, height: 460, minW: 380, minH: 260,
+  icon: '<svg viewBox="0 0 24 24"><defs><linearGradient id="eg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e8e8ed"/></linearGradient></defs><rect x="3.5" y="2" width="17" height="20" rx="4" fill="url(#eg1)" stroke="rgba(0,0,0,.14)"/><path d="M7 7h7M7 10.5h10M7 14h10M7 17.5h6" stroke="#98a2b3" stroke-width="1.3" stroke-linecap="round"/><path d="m16.2 15.5 3.6-3.6 1.7 1.7-3.6 3.6-2.1.4z" fill="#ffd60a" stroke="#b8860b" stroke-width=".9" stroke-linejoin="round"/></svg>',
+  menus: () => ["File", "Format"],
+  menu: () => [
+    { label: "New", sc: "⌘N", fn: () => WM.open("editor") },
+    { label: "Save", sc: "⌘S", fn: () => EditorOps.saveOf(topWinOf("editor")) }
+  ],
+  mount(root, win) {
+    const saved = Store.data.editorText || "";
+    const area = el("textarea", { class: "editor-area", spellcheck: "false", placeholder: "Start typing…" });
+    area.value = saved;
+    const statusChars = el("span", {}, "0 characters");
+    const statusWords = el("span", {}, "0 words");
+    const statusLines = el("span", {}, "1 lines");
+    const statusSaved = el("span", { class: "saved" }, Store.data.editorSaved ? "Saved" : "Unsaved");
+    let dirty = false;
+    function refresh() {
+      const v = area.value;
+      statusChars.textContent = v.length + " characters";
+      statusWords.textContent = (v.trim() ? v.trim().split(/\s+/).length : 0) + " words";
+      statusLines.textContent = v.split("\n").length + " lines";
+    }
+    function markDirty(d) {
+      dirty = d;
+      statusSaved.textContent = d ? "Unsaved" : "Saved";
+      statusSaved.className = d ? "" : "saved";
+      win.setTitle("TextEdit" + (d ? " — Edited" : ""));
+    }
+    function save() {
+      Store.data.editorText = area.value;
+      Store.data.editorSaved = true;
+      Store.save();
+      markDirty(false);
+      toast("Document saved to this Mac");
+    }
+    win.editorSave = save;
+    area.addEventListener("input", () => { refresh(); markDirty(true); });
+    const fontSize = { v: 14 };
+    const btnSmaller = el("button", { class: "icon-btn", "aria-label": "Smaller text", html: '<span style="font-size:12px;font-weight:700">A</span>' });
+    const btnBigger = el("button", { class: "icon-btn", "aria-label": "Bigger text", html: '<span style="font-size:16px;font-weight:700">A</span>' });
+    btnSmaller.addEventListener("click", () => { fontSize.v = Math.max(11, fontSize.v - 1); area.style.fontSize = fontSize.v + "px"; });
+    btnBigger.addEventListener("click", () => { fontSize.v = Math.min(26, fontSize.v + 1); area.style.fontSize = fontSize.v + "px"; });
+    const tBtn = (cls, icon, fn, on) => {
+      const b = el("button", { class: "icon-btn", html: ICONS[icon], "aria-label": icon, style: on ? "color:var(--accent)" : "" });
+      b.addEventListener("click", () => { fn(); b.style.color = area.classList.contains(cls) ? "var(--accent)" : ""; Sound.toggle(); });
+      return b;
+    };
+    const toolbar = el("div", { class: "editor-toolbar" },
+      el("button", { class: "btn primary", html: ICONS.save, onclick: save }, "Save"),
+      el("button", { class: "btn", onclick: () => { if (!dirty || confirmDiscard()) { area.value = ""; refresh(); markDirty(true); } } }, "New"),
+      el("span", { class: "sep" }),
+      tBtn("f-bold", "bold", () => area.classList.toggle("f-bold")),
+      tBtn("f-italic", "italic", () => area.classList.toggle("f-italic")),
+      tBtn("f-under", "underline", () => area.classList.toggle("f-under")),
+      el("span", { class: "sep" }),
+      btnSmaller, btnBigger
+    );
+    function confirmDiscard() { toast("Unsaved changes kept — press Save to store them"); return true; }
+    root.append(el("div", { class: "editor" }, toolbar, area,
+      el("div", { class: "editor-status" }, statusChars, statusWords, statusLines, statusSaved)));
+    addStyleOnce("editor-fstyles", ".f-bold{font-weight:700}.f-italic{font-style:italic}.f-under{text-decoration:underline}");
+    root.tabIndex = 0;
+    root.addEventListener("keydown", e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "n") { e.preventDefault(); WM.open("editor"); }
+    });
+    refresh();
+  },
+  onClose(win) {
+    if (win.editorSave && Store.data.editorText !== undefined) { /* keep last text in store */ }
+  }
+};
+function addStyleOnce(id, css) {
+  if (!document.getElementById(id)) {
+    const s = document.createElement("style");
+    s.id = id; s.textContent = css;
+    document.head.append(s);
+  }
+}
+function topWinOf(appId) {
+  return Array.from(WM.windows.values()).filter(w => w.appId === appId).sort((a, b) => b.el.style.zIndex - a.el.style.zIndex)[0];
+}
+const EditorOps = {
+  saveOf(win) { win && win.editorSave ? win.editorSave() : toast("Nothing to save"); }
+};
+
+/* ---------------- Calendar ---------------- */
+Apps.calendar = {
+  title: "Calendar",
+  width: 720, height: 520, minW: 460, minH: 380,
+  icon: '<svg viewBox="0 0 24 24"><defs><linearGradient id="kg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f0f0f3"/></linearGradient></defs><rect x="3" y="3.5" width="18" height="17.5" rx="3.5" fill="url(#kg1)" stroke="rgba(0,0,0,.13)"/><rect x="3" y="3.5" width="18" height="4.6" rx="3.5" fill="#ff3b30"/><text x="12" y="7.35" text-anchor="middle" font-family="-apple-system,Helvetica" font-weight="700" font-size="3.1" fill="#fff">JUL</text><g fill="#c8c8cd"><circle cx="7.6" cy="11.4" r="1.15"/><circle cx="12" cy="11.4" r="1.15"/><circle cx="16.4" cy="11.4" r="1.15"/><circle cx="7.6" cy="15" r="1.15"/><circle cx="12" cy="15" r="1.15"/><circle cx="16.4" cy="15" r="1.15"/><circle cx="7.6" cy="18.4" r="1.15"/><circle cx="12" cy="18.4" r="1.15"/></g></svg>',
+  menus: () => ["File", "View"],
+  menu: () => [
+    { label: "Today", sc: "T", fn: () => { const w = topWinOf("calendar"); if (w && w.calGoToday) w.calGoToday(); } },
+    { label: "Next Month", sc: "→", fn: () => { const w = topWinOf("calendar"); if (w && w.calShift) w.calShift(1); } },
+    { label: "Previous Month", sc: "←", fn: () => { const w = topWinOf("calendar"); if (w && w.calShift) w.calShift(-1); } }
+  ],
+  mount(root, win) {
+    const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const today = new Date();
+    let view = new Date(today.getFullYear(), today.getMonth(), 1);
+    let selected = new Date(today);
+    const title = el("div", { class: "cal-title" });
+    const grid = el("div", { class: "cal-days", role: "grid", "aria-label": "Days" });
+    const weekdays = el("div", { class: "cal-weekdays" },
+      ...["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map(d => el("div", {}, d)));
+    function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+    function render() {
+      title.textContent = MONTHS[view.getMonth()] + " " + view.getFullYear();
+      grid.innerHTML = "";
+      const firstDow = view.getDay();
+      const dim = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+      const prevDim = new Date(view.getFullYear(), view.getMonth(), 0).getDate();
+      const totalCells = Math.ceil((firstDow + dim) / 7) * 7;
+      for (let i = 0; i < totalCells; i++) {
+        const dayNum = i - firstDow + 1;
+        let d, other = false;
+        if (dayNum < 1) { d = new Date(view.getFullYear(), view.getMonth() - 1, prevDim + dayNum); other = true; }
+        else if (dayNum > dim) { d = new Date(view.getFullYear(), view.getMonth() + 1, dayNum - dim); other = true; }
+        else d = new Date(view.getFullYear(), view.getMonth(), dayNum);
+        const cell = el("button", { class: "cal-day" + (other ? " other" : "") + (sameDay(d, today) ? " today" : "") + (sameDay(d, selected) ? " sel" : "") },
+          el("span", { class: "num" }, String(d.getDate())));
+        cell.addEventListener("click", () => { selected = d; render(); Sound.click(); });
+        grid.append(cell);
+      }
+    }
+    win.calGoToday = () => { view = new Date(today.getFullYear(), today.getMonth(), 1); selected = new Date(today); render(); };
+    win.calShift = n => { view = new Date(view.getFullYear(), view.getMonth() + n, 1); render(); };
+    const btnPrev = el("button", { class: "icon-btn", html: ICONS.chevL, "aria-label": "Previous month" });
+    const btnNext = el("button", { class: "icon-btn", html: ICONS.chevR, "aria-label": "Next month" });
+    btnPrev.addEventListener("click", () => win.calShift(-1));
+    btnNext.addEventListener("click", () => win.calShift(1));
+    root.append(el("div", { class: "cal" },
+      el("div", { class: "cal-head" },
+        el("button", { class: "btn", onclick: () => win.calGoToday() }, "Today"),
+        btnPrev, title, btnNext),
+      weekdays, grid));
+    root.tabIndex = 0;
+    root.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft") win.calShift(-1);
+      else if (e.key === "ArrowRight") win.calShift(1);
+      else if (e.key.toLowerCase() === "t") win.calGoToday();
+    });
+    render();
+  }
+};
+
+/* ---------------- About This Mac ---------------- */
+Apps.about = {
+  title: "About This Mac", width: 320, height: 400, minW: 300, minH: 360,
+  icon: '<svg viewBox="0 0 24 24"><rect x="2.6" y="4.4" width="18.8" height="12.6" rx="2.2" fill="#cfd6e0" stroke="#9aa5b1"/><rect x="4.1" y="5.9" width="15.8" height="9.6" rx="1.2" fill="#1d63d1"/><path d="M8.2 21.2h7.6M12 17v4.2" stroke="#9aa5b1" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  mount(root) {
+    root.append(el("div", { class: "about" },
+      el("div", { class: "a-icon", html: '<svg viewBox="0 0 24 24"><defs><linearGradient id="ag1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7db7f0"/><stop offset="1" stop-color="#3a76d8"/></linearGradient></defs><path d="M17.05 12.53c-.02-2.2 1.79-3.26 1.87-3.31-1.02-1.49-2.61-1.7-3.17-1.72-1.35-.14-2.63.79-3.31.79-.69 0-1.74-.77-2.86-.75-1.47.02-2.83.86-3.59 2.17-1.53 2.66-.39 6.6 1.11 8.76.73 1.06 1.6 2.24 2.75 2.2 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.71.71 2.88.69 1.19-.02 1.95-1.08 2.68-2.14.84-1.22 1.19-2.4 1.21-2.46-.03-.01-2.33-.89-2.42-3.52zM14.94 5.3c.6-.73 1.01-1.75.9-2.76-.87.04-1.93.58-2.56 1.31-.56.65-1.05 1.69-.92 2.68.97.08 1.97-.5 2.58-1.23z" fill="url(#ag1)"/></svg>' }),
+      el("h2", {}, "WebOS"),
+      el("div", { class: "a-sub" }, "Version 14.0 (Sonoma Web Edition)"),
+      el("div", { class: "a-rows" },
+        el("div", { class: "a-row" }, el("span", {}, "Chip"), el("span", {}, "JavaScript Engine")),
+        el("div", { class: "a-row" }, el("span", {}, "Memory"), el("span", {}, "localStorage")),
+        el("div", { class: "a-row" }, el("span", {}, "Serial"), el("span", {}, "W3B0S-0001")),
+        el("div", { class: "a-row" }, el("span", {}, "Resources"), el("span", {}, "All inline, 0 external")))));
+  }
+};
+
+/* ---------------- Help ---------------- */
+Apps.help = {
+  title: "Help", width: 460, height: 420, minW: 340, minH: 280,
+  icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="#4aa3ee"/><path d="M9.4 9.2c.2-1.6 1.3-2.6 2.7-2.6 1.5 0 2.7 1.1 2.7 2.5 0 .9-.4 1.5-1.3 2.1-.9.6-1.2 1-1.2 1.8v.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round" fill="none"/><circle cx="12.2" cy="16.6" r="1.1" fill="#fff"/></svg>',
+  mount(root) {
+    root.append(el("div", { class: "help" },
+      el("h3", {}, "Windows"),
+      el("p", {}, 'Drag by the title bar. Double-click the title bar to zoom. Use the traffic-light buttons to close, minimize and zoom. Drag the bottom-right corner to resize.'),
+      el("h3", {}, "Keyboard"),
+      el("p", {}, el("span", { class: "h-k" }, "Esc"), " dismisses menus · In Calculator, number keys and ", el("span", { class: "h-k" }, "Enter"), " work directly."),
+      el("h3", {}, "Persistence"),
+      el("p", {}, "Wallpaper choice, Control Center settings, the TextEdit draft and the virtual disk all persist in this browser's localStorage."),
+      el("h3", {}, "Under the hood"),
+      el("p", {}, "Everything — wallpaper, icons, apps — is drawn with CSS and inline SVG. No network requests are made.")));
+  }
+};
+
+/* ---------------- Video Player ---------------- */
+
+const VP_PLAY_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.2 5.6v12.8c0 .8.9 1.3 1.6.9l10-6.4c.6-.4.6-1.4 0-1.8l-10-6.4c-.7-.4-1.6.1-1.6.9z"/></svg>';
+const VP_PAUSE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.4" y="5" width="3.9" height="14" rx="1.3"/><rect x="13.7" y="5" width="3.9" height="14" rx="1.3"/></svg>';
+
+function vpFmt(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const m = Math.floor(sec / 60);
+  return m + ":" + String(sec % 60).padStart(2, "0");
+}
+
+function vpDrawWaves(ctx, w, h, t, T) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, "#1c1440"); g.addColorStop(0.55, "#5b2a86"); g.addColorStop(1, "#ff6b6b");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  const sy = h * (0.30 + 0.08 * Math.sin(t / T * Math.PI * 2));
+  const sg = ctx.createRadialGradient(w / 2, sy, 0, w / 2, sy, h * 0.30);
+  sg.addColorStop(0, "rgba(255,214,10,.95)"); sg.addColorStop(0.35, "rgba(255,159,10,.55)"); sg.addColorStop(1, "rgba(255,159,10,0)");
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(w / 2, sy, h * 0.30, 0, 7); ctx.fill();
+  ctx.fillStyle = "#ffd60a"; ctx.beginPath(); ctx.arc(w / 2, sy, h * 0.065, 0, 7); ctx.fill();
+  const cols = ["rgba(255,59,90,.88)", "rgba(255,159,10,.82)", "rgba(94,92,230,.82)", "rgba(10,132,255,.72)", "rgba(24,20,44,.9)"];
+  for (let i = 0; i < 5; i++) {
+    const base = h * (0.52 + i * 0.10), amp = h * (0.035 + 0.012 * i);
+    const k = (2 + i) * Math.PI * 2 / w, sp = (0.6 + i * 0.25) * (i % 2 ? -1 : 1);
+    ctx.beginPath(); ctx.moveTo(0, h);
+    for (let x = 0; x <= w; x += Math.max(6, w / 90)) ctx.lineTo(x, base + amp * Math.sin(x * k + t * sp + i * 1.7));
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fillStyle = cols[i]; ctx.fill();
+  }
+}
+
+function vpDrawOrbs(ctx, w, h, t) {
+  const g = ctx.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, "#0a0f1e"); g.addColorStop(1, "#101c33");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  const hues = [10, 45, 160, 210, 265];
+  for (let i = 0; i < 54; i++) {
+    const sx = (i * 0.6180339) % 1, sy2 = (i * 0.7548776) % 1;
+    const vx = 0.008 + ((i * 0.38) % 1) * 0.02, vy = 0.005 + ((i * 0.27) % 1) * 0.015;
+    const x = (((sx + vx * t) % 1) + 1) % 1 * w;
+    const y = (((sy2 + vy * t) % 1) + 1) % 1 * h;
+    const rr = (1.5 + ((i * 0.77) % 1) * 3.5) * (w / 640);
+    const hue = hues[i % 5];
+    const gg = ctx.createRadialGradient(x, y, 0, x, y, rr * 4);
+    gg.addColorStop(0, "hsla(" + hue + ",90%,72%,.9)"); gg.addColorStop(1, "hsla(" + hue + ",90%,60%,0)");
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, rr * 4, 0, 7); ctx.fill();
+    ctx.fillStyle = "hsla(" + hue + ",95%,88%,.95)";
+    ctx.beginPath(); ctx.arc(x, y, rr, 0, 7); ctx.fill();
+  }
+}
+
+function vpDrawAurora(ctx, w, h, t) {
+  ctx.fillStyle = "#05060a"; ctx.fillRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.36;
+  for (let i = 0; i < 72; i++) {
+    const a = (i / 72) * Math.PI * 2 + t * 0.5;
+    const pulse = 0.5 + 0.5 * Math.sin(t * 2 + i * 0.55);
+    const len = R * (0.35 + 0.45 * pulse);
+    const hue = (200 + i * 3 + t * 18) % 360;
+    const x1 = cx + Math.cos(a) * R * 0.32, y1 = cy + Math.sin(a) * R * 0.32;
+    const x2 = cx + Math.cos(a) * (R * 0.32 + len), y2 = cy + Math.sin(a) * (R * 0.32 + len);
+    const g = ctx.createLinearGradient(x1, y1, x2, y2);
+    g.addColorStop(0, "hsla(" + hue + ",85%,60%,0)");
+    g.addColorStop(0.5, "hsla(" + hue + ",85%,62%,.5)");
+    g.addColorStop(1, "hsla(" + hue + ",85%,70%,0)");
+    ctx.strokeStyle = g; ctx.lineWidth = Math.max(2, R * 0.05); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5);
+  core.addColorStop(0, "rgba(255,255,255,.9)"); core.addColorStop(0.25, "hsla(200,90%,70%,.5)"); core.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = core; ctx.beginPath(); ctx.arc(cx, cy, R * 0.5, 0, 7); ctx.fill();
+  const oa = t * 1.4;
+  ctx.fillStyle = "#fff";
+  ctx.beginPath(); ctx.arc(cx + Math.cos(oa) * R * 1.15, cy + Math.sin(oa) * R * 1.15, Math.max(2.5, w / 240), 0, 7); ctx.fill();
+}
+
+const VP_CLIPS = [
+  { id: "waves", title: "Sonoma Waves", dur: 24, css: "linear-gradient(135deg,#1c1440,#ff375f 60%,#ff9f0a)", draw: vpDrawWaves },
+  { id: "orbs", title: "Particle Drift", dur: 18, css: "radial-gradient(circle at 32% 38%,#0a84ff,#0d1224 72%)", draw: vpDrawOrbs },
+  { id: "aurora", title: "Aurora Ring", dur: 20, css: "conic-gradient(from 20deg,#30d158,#0a84ff,#bf5af2,#30d158)", draw: vpDrawAurora }
+];
+
+Apps.video = {
+  title: "Video Player",
+  width: 720, height: 480, minW: 460, minH: 340,
+  icon: '<svg viewBox="0 0 24 24"><defs><linearGradient id="vpg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a4a50"/><stop offset="1" stop-color="#232327"/></linearGradient></defs><rect x="2.5" y="4" width="19" height="13" rx="3" fill="url(#vpg1)"/><path d="M10.2 7.7v5.6c0 .5.6.8 1 .5l4.2-2.8c.4-.3.4-.8 0-1.1l-4.2-2.8c-.4-.2-1 .1-1 .6z" fill="#fff"/><rect x="9" y="18.6" width="6" height="1.6" rx="0.8" fill="#8e8e93"/></svg>',
+  menus: () => ["Playback", "Clips"],
+  menu: () => [
+    { label: "Play / Pause", sc: "Space", fn: () => { const w = topWinOf("video"); if (w && w.vpToggle) w.vpToggle(); } },
+    { label: "Restart Clip", sc: "⌘R", fn: () => { const w = topWinOf("video"); if (w && w.vpSeek) w.vpSeek(0); } },
+    { label: "Next Clip", sc: "⌘→", fn: () => { const w = topWinOf("video"); if (w && w.vpNext) w.vpNext(); } }
+  ],
+  mount(root, win) {
+    let clipIx = 0, t = 0, playing = false, scrubbing = false, raf = 0, lastTs = 0;
+    const RATES = [0.5, 1, 2];
+    let rateIx = 1;
+
+    const wrap = el("div", { class: "vp-wrap" });
+    const side = el("div", { class: "vp-side" }, el("h4", {}, "Library"));
+    const main = el("div", { class: "vp-main" });
+    const screen = el("div", { class: "vp-screen" });
+    const canvas = el("canvas", { "aria-label": "Video picture" });
+    const ctx = canvas.getContext("2d");
+    screen.append(canvas);
+
+    const ctl = el("div", { class: "vp-ctl" });
+    const playBtn = el("button", { class: "vp-btn", html: VP_PLAY_SVG, "aria-label": "Play", title: "Play / Pause" });
+    const tCur = el("span", { class: "vp-time" }, "0:00");
+    const fill = el("div", { class: "vp-fill" });
+    const track = el("div", { class: "vp-track", role: "slider", "aria-label": "Timeline" }, el("div", { class: "vp-rail" }, fill));
+    const tTot = el("span", { class: "vp-time" }, "0:00");
+    const speedBtn = el("button", { class: "vp-speed", title: "Playback speed" }, "1\u00d7");
+    ctl.append(playBtn, tCur, track, tTot, speedBtn);
+    main.append(screen, ctl);
+
+    const itemBtns = [];
+    VP_CLIPS.forEach((clip, i) => {
+      const b = el("button", { class: "vp-item" },
+        el("span", { class: "vp-thumb", style: "background:" + clip.css, "aria-hidden": "true" }),
+        el("span", {}, clip.title));
+      b.addEventListener("click", () => { Sound.click(); setClip(i, true); });
+      itemBtns.push(b);
+      side.append(b);
+    });
+    wrap.append(side, main);
+    root.append(wrap);
+
+    const dur = () => VP_CLIPS[clipIx].dur;
+
+    function fit() {
+      const r = screen.getBoundingClientRect();
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const W = Math.max(2, Math.round(r.width * dpr)), H = Math.max(2, Math.round(r.height * dpr));
+      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+      render();
+    }
+    win.onResize = () => fit();
+
+    function render() {
+      const clip = VP_CLIPS[clipIx];
+      clip.draw(ctx, canvas.width, canvas.height, t, clip.dur);
+      fill.style.width = (t / clip.dur * 100).toFixed(2) + "%";
+      tCur.textContent = vpFmt(t);
+      tTot.textContent = vpFmt(clip.dur);
+    }
+    function tick(ts) {
+      if (!playing && !scrubbing) { raf = 0; render(); return; }
+      if (playing && !scrubbing) {
+        const dt = lastTs ? Math.min(0.25, (ts - lastTs) / 1000) : 0;
+        t += dt * RATES[rateIx];
+        if (t >= dur()) {
+          t = dur(); playing = false;
+          playBtn.innerHTML = VP_PLAY_SVG; playBtn.setAttribute("aria-label", "Play");
+        }
+      }
+      lastTs = ts;
+      render();
+      if (playing || scrubbing) raf = requestAnimationFrame(tick);
+      else raf = 0;
+    }
+    function ensureRaf() { if (!raf) { lastTs = 0; raf = requestAnimationFrame(tick); } }
+
+    function setPlaying(p) {
+      if (p && t >= dur()) t = 0;
+      playing = p;
+      playBtn.innerHTML = p ? VP_PAUSE_SVG : VP_PLAY_SVG;
+      playBtn.setAttribute("aria-label", p ? "Pause" : "Play");
+      if (p) ensureRaf(); else render();
+    }
+    function setClip(i, autoplay) {
+      clipIx = (i + VP_CLIPS.length) % VP_CLIPS.length;
+      t = 0;
+      itemBtns.forEach((b, j) => b.classList.toggle("on", j === clipIx));
+      setPlaying(!!autoplay);
+    }
+    playBtn.addEventListener("click", () => { Sound.click(); setPlaying(!playing); });
+    speedBtn.addEventListener("click", () => {
+      Sound.click();
+      rateIx = (rateIx + 1) % RATES.length;
+      speedBtn.textContent = String(RATES[rateIx]) + "\u00d7";
+    });
+
+    function fracFromEvent(e) {
+      const r = track.getBoundingClientRect();
+      return Math.max(0, Math.min(1, (e.clientX - r.left) / Math.max(1, r.width)));
+    }
+    track.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      track.setPointerCapture(e.pointerId);
+      scrubbing = true;
+      t = fracFromEvent(e) * dur();
+      render(); ensureRaf();
+    });
+    track.addEventListener("pointermove", e => {
+      if (!scrubbing) return;
+      t = fracFromEvent(e) * dur();
+      render();
+    });
+    const endScrub = e => {
+      if (!scrubbing) return;
+      scrubbing = false;
+      t = fracFromEvent(e) * dur();
+      if (!playing) { render(); raf = 0; }
+    };
+    track.addEventListener("pointerup", endScrub);
+    track.addEventListener("pointercancel", () => {
+      scrubbing = false;
+      if (playing) { lastTs = 0; ensureRaf(); } else { render(); }
+    });
+
+    win.vpToggle = () => setPlaying(!playing);
+    win.vpSeek = s => { t = Math.max(0, Math.min(dur(), Number(s) || 0)); if (t >= dur()) playing = false; render(); };
+    win.vpNext = () => setClip(clipIx + 1, playing);
+    win.vpTeardown = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } };
+
+    itemBtns[0].classList.add("on");
+    setTimeout(fit, 0);
+    tTot.textContent = vpFmt(VP_CLIPS[0].dur);
+    setPlaying(true);
+  },
+  onClose(win) { win.vpTeardown && win.vpTeardown(); }
+};
+
+/* ---------------- Python Terminal (genuine mini-Python: tokenizer + parser + evaluator; no eval / no Function) ---------------- */
+
+const PyMini = (() => {
+  class PyErr extends Error { constructor(msg, incomplete) { super(msg); this.pyMsg = msg; this.incomplete = !!incomplete; } }
+  const synErr = (m, inc) => new PyErr("SyntaxError: " + m, inc);
+
+  /* ---------- tokenizer ---------- */
+  const KW = new Set(["if","elif","else","while","for","in","def","return","break","continue","and","or","not","True","False","None","pass"]);
+  const OPS = ["**","//","==","!=","<=",">=","+=","-=","*=","/=",">>>","...","+","-","*","/","%","<",">","=","(",")","[","]",",",":","."];
+
+  function tokenize(src) {
+    const lines = src.replace(/\r\n?/g, "\n").split("\n");
+    const toks = [];
+    const indents = [0];
+    let any = false;
+    for (let ln = 0; ln < lines.length; ln++) {
+      const raw = lines[ln];
+      const stripped = raw.replace(/#.*$/, "");
+      if (!stripped.trim()) continue;               // blank / comment-only line
+      let ind = 0, c = 0;
+      while (c < raw.length && (raw[c] === " " || raw[c] === "\t")) { ind += raw[c] === "\t" ? 4 : 1; c++; }
+      const body = raw.slice(c);
+      if (body.replace(/#.*$/, "").trim() === "") continue;
+      if (ind > indents[indents.length - 1]) { indents.push(ind); toks.push({ t: "indent", line: ln + 1 }); }
+      else while (ind < indents[indents.length - 1]) { indents.pop(); toks.push({ t: "dedent", line: ln + 1 }); }
+      if (ind !== indents[indents.length - 1]) throw synErr("unindent does not match any outer indentation level");
+      let i = 0; const L = body.length;
+      while (i < L) {
+        const ch = body[i];
+        if (ch === " " || ch === "\t") { i++; continue; }
+        if (ch === "#") break;
+        if (/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(body[i + 1] || ""))) {
+          let j = i, dot = false, e = false;
+          while (j < L && (/[0-9]/.test(body[j]) || (body[j] === "." && !dot && !e) || ((body[j] === "e" || body[j] === "E") && !e && j > i) || ((body[j] === "+" || body[j] === "-") && e === "prev"))) {
+            if (body[j] === ".") dot = true;
+            if (body[j] === "e" || body[j] === "E") { e = "prev"; } else if (e === "prev") e = true;
+            j++;
+          }
+          toks.push({ t: "num", v: Number(body.slice(i, j)), float: dot || e !== false, line: ln + 1 });
+          if (Number.isNaN(toks[toks.length - 1].v)) throw synErr("invalid number literal '" + body.slice(i, j) + "'");
+          i = j; continue;
+        }
+        if (/[A-Za-z_]/.test(ch)) {
+          let j = i;
+          while (j < L && /[A-Za-z0-9_]/.test(body[j])) j++;
+          const w = body.slice(i, j);
+          toks.push({ t: KW.has(w) ? "kw" : "name", v: w, line: ln + 1 });
+          i = j; continue;
+        }
+        if (ch === '"' || ch === "'") {
+          let j = i + 1, s = "";
+          while (j < L && body[j] !== ch) {
+            if (body[j] === "\\") {
+              const nx = body[j + 1];
+              const map = { n: "\n", t: "\t", r: "\r", "\\": "\\", "'": "'", '"': '"' };
+              if (nx in map) { s += map[nx]; j += 2; continue; }
+              s += nx; j += 2; continue;
+            }
+            s += body[j]; j++;
+          }
+          if (j >= L) throw synErr("unterminated string literal (line " + (ln + 1) + ")");
+          toks.push({ t: "str", v: s, line: ln + 1 });
+          i = j + 1; continue;
+        }
+        const op = OPS.find(o => body.startsWith(o, i));
+        if (op) { toks.push({ t: "op", v: op, line: ln + 1 }); i += op.length; continue; }
+        throw synErr("invalid character '" + ch + "' (line " + (ln + 1) + ")");
+      }
+      toks.push({ t: "newline", line: ln + 1 });
+      any = true;
+    }
+    while (indents.length > 1) { indents.pop(); toks.push({ t: "dedent", line: lines.length }); }
+    toks.push({ t: "eof", line: lines.length });
+    return { toks, any };
+  }
+
+  /* ---------- parser (recursive descent) ---------- */
+  function parse(src) {
+    const { toks } = tokenize(src);
+    let p = 0;
+    const peek = () => toks[p];
+    const at = (t, v) => toks[p].t === t && (v === undefined || toks[p].v === v);
+    const eat = (t, v) => { if (!at(t, v)) return false; p++; return true; };
+    const expect = (t, v) => {
+      if (!at(t, v)) {
+        const tk = toks[p];
+        const got = tk.t === "eof" ? "end of input" : tk.t === "newline" ? "end of line" : "'" + (tk.v != null ? tk.v : tk.t) + "'";
+        const want = "'" + (v != null ? v : t) + "'";
+        throw synErr("expected " + want + " but found " + got, tk.t === "eof" || tk.t === "newline");
+      }
+      return toks[p++];
+    };
+    const skipNl = () => { while (at("newline")) p++; };
+
+    function statements(stopIndent) {
+      const out = [];
+      skipNl();
+      while (!at("eof") && !at("dedent")) {
+        out.push(statement());
+        skipNl();
+      }
+      return out;
+    }
+
+    function suite() {
+      expect("op", ":");
+      if (eat("newline")) {
+        if (!eat("indent")) { if (at("eof") || at("newline")) throw synErr("expected an indented block", true); throw synErr("expected an indented block"); }
+        const body = [];
+        skipNl();
+        while (!at("dedent") && !at("eof")) { body.push(statement()); skipNl(); }
+        if (!eat("dedent")) throw synErr("expected an indented block", at("eof"));
+        return body;
+      }
+      const body = [statement()];
+      return body;
+    }
+
+    function statement() {
+      const line = peek().line;
+      if (at("kw", "if")) {
+        p++;
+        const clauses = [];
+        const test = orExpr(); const body = suite();
+        clauses.push({ test, body });
+        let els = null;
+        for (;;) {
+          if (eat("kw", "elif")) { const t2 = orExpr(); clauses.push({ test: t2, body: suite() }); }
+          else if (eat("kw", "else")) { els = suite(); break; }
+          else break;
+        }
+        return { k: "if", clauses, els, line };
+      }
+      if (at("kw", "while")) { p++; const test = orExpr(); return { k: "while", test, body: suite(), line }; }
+      if (at("kw", "for")) {
+        p++;
+        const name = expect("name").v;
+        expect("kw", "in");
+        const iter = orExpr();
+        return { k: "for", name, iter, body: suite(), line };
+      }
+      if (at("kw", "def")) {
+        p++;
+        const name = expect("name").v;
+        expect("op", "(");
+        const params = [];
+        if (!at("op", ")")) { params.push(expect("name").v); while (eat("op", ",")) { if (at("op", ")")) break; params.push(expect("name").v); } }
+        expect("op", ")");
+        return { k: "def", name, params, body: suite(), line };
+      }
+      if (at("kw", "return")) { p++; const v = at("newline") || at("eof") || at("dedent") ? null : orExpr(); return { k: "return", v, line }; }
+      if (eat("kw", "break")) return { k: "break", line };
+      if (eat("kw", "continue")) return { k: "continue", line };
+      if (eat("kw", "pass")) return { k: "pass", line };
+      const e = exprTarget();
+      for (const a of ["+=", "-=", "*=", "/="]) {
+        if (at("op", a)) {
+          p++;
+          const rhs = orExpr();
+          if (e.k !== "name") throw synErr("invalid target for " + a);
+          return { k: "aug", target: e.name, op: a[0], rhs, line };
+        }
+      }
+      if (at("op", "=")) {
+        p++;
+        const rhs = orExpr();
+        if (e.k !== "name" && e.k !== "index") throw synErr("cannot assign to expression");
+        return { k: "assign", target: e, rhs, line };
+      }
+      return { k: "exprstmt", e, line };
+    }
+
+    function exprTarget() { return orExpr(); }
+
+    function orExpr() {
+      let l = andExpr();
+      while (eat("kw", "or")) l = { k: "or", l, r: andExpr() };
+      return l;
+    }
+    function andExpr() {
+      let l = notExpr();
+      while (eat("kw", "and")) l = { k: "and", l, r: notExpr() };
+      return l;
+    }
+    function notExpr() {
+      if (eat("kw", "not")) return { k: "not", e: notExpr() };
+      return comparison();
+    }
+    function comparison() {
+      const l = arith();
+      const ops = ["==", "!=", "<=", ">=", "<", ">"];
+      for (const o of ops) {
+        if (at("op", o)) { p++; return { k: "cmp", op: o, l, r: arith() }; }
+      }
+      return l;
+    }
+    function arith() {
+      let l = term();
+      while (at("op", "+") || at("op", "-")) { const op = toks[p++].v; l = { k: "bin", op, l, r: term() }; }
+      return l;
+    }
+    function term() {
+      let l = factor();
+      while (at("op", "*") || at("op", "/") || at("op", "//") || at("op", "%")) { const op = toks[p++].v; l = { k: "bin", op, l, r: factor() }; }
+      return l;
+    }
+    function factor() {
+      if (at("op", "-")) { p++; return { k: "neg", e: factor() }; }
+      if (at("op", "+")) { p++; return factor(); }
+      return power();
+    }
+    function power() {
+      const b = postfix();
+      if (eat("op", "**")) return { k: "bin", op: "**", l: b, r: factor() };
+      return b;
+    }
+    function postfix() {
+      let e = atom();
+      for (;;) {
+        if (at("op", "(")) {
+          p++;
+          const args = [];
+          if (!at("op", ")")) { args.push(orExpr()); while (eat("op", ",")) { if (at("op", ")")) break; args.push(orExpr()); } }
+          expect("op", ")");
+          e = { k: "call", fn: e, args };
+        } else if (at("op", "[")) {
+          p++;
+          const idx = orExpr();
+          expect("op", "]");
+          e = { k: "index", obj: e, idx };
+        } else break;
+      }
+      return e;
+    }
+    function atom() {
+      const tk = peek();
+      if (tk.t === "num") { p++; return { k: "num", v: tk.v }; }
+      if (tk.t === "str") { p++; return { k: "str", v: tk.v }; }
+      if (tk.t === "kw" && (tk.v === "True" || tk.v === "False")) { p++; return { k: "const", v: tk.v === "True" }; }
+      if (tk.t === "kw" && tk.v === "None") { p++; return { k: "const", v: null }; }
+      if (tk.t === "name") { p++; return { k: "name", name: tk.v }; }
+      if (at("op", "[")) {
+        p++;
+        const items = [];
+        if (!at("op", "]")) { items.push(orExpr()); while (eat("op", ",")) { if (at("op", "]")) break; items.push(orExpr()); } }
+        expect("op", "]");
+        return { k: "list", items };
+      }
+      if (at("op", "(")) {
+        p++;
+        const e = orExpr();
+        expect("op", ")");
+        return e;
+      }
+      {
+        const got = tk.t === "eof" ? "end of input" : tk.t === "newline" ? "end of line" : "'" + (tk.v != null ? tk.v : tk.t) + "'";
+        throw synErr("expected an expression but found " + got, tk.t === "eof" || tk.t === "newline");
+      }
+    }
+
+    const prog = statements();
+    if (!at("eof")) {
+      const tk = peek();
+      if (tk.t === "indent") throw synErr("unexpected indent");
+      throw synErr("unexpected token '" + (tk.v != null ? tk.v : tk.t) + "'");
+    }
+    return prog;
+  }
+
+  /* ---------- runtime ---------- */
+  const BreakSig = { sig: "break" }, ContinueSig = { sig: "continue" };
+  class ReturnSig { constructor(v) { this.v = v; } }
+  const isNum = v => typeof v === "number";
+
+  class Env {
+    constructor(parent) { this.vars = Object.create(null); this.parent = parent || null; }
+    lookup(n) { let e = this; while (e) { if (n in e.vars) return e; e = e.parent; } return null; }
+    get(n) { const e = this.lookup(n); if (!e) throw new PyRuntime("NameError: name '" + n + "' is not defined"); return e.vars[n]; }
+    set(n, v) { this.vars[n] = v; }
+  }
+  class PyRuntime extends Error {}
+
+  function typeName(v) {
+    if (v === null) return "NoneType";
+    if (typeof v === "boolean") return "bool";
+    if (isNum(v)) return Number.isInteger(v) ? "int" : "float";
+    if (typeof v === "string") return "str";
+    if (Array.isArray(v)) return "list";
+    if (v && v.__fn) return "function";
+    return "object";
+  }
+  const truthy = v => !(v === false || v === null || v === 0 || v === "" || (Array.isArray(v) && v.length === 0));
+
+  function toStr(v) {
+    if (v === null) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (typeof v === "string") return v;
+    if (Array.isArray(v)) return "[" + v.map(toRepr).join(", ") + "]";
+    if (v && v.__fn) return "<function " + v.name + ">";
+    return String(v);
+  }
+  function toRepr(v) {
+    if (typeof v === "string") return "'" + v.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n") + "'";
+    return toStr(v);
+  }
+
+  function binop(op, a, b) {
+    switch (op) {
+      case "+":
+        if (typeof a === "string" || typeof b === "string") {
+          if (typeof a !== "string" || typeof b !== "string")
+            throw new PyRuntime("TypeError: can only concatenate str (not \"" + typeName(b) + "\") to str");
+          return a + b;
+        }
+        if (Array.isArray(a) && Array.isArray(b)) return a.concat(b);
+        if (isNum(a) && isNum(b) && typeof a !== "boolean" && typeof b !== "boolean") return a + b;
+        throw new PyRuntime("TypeError: unsupported operand type(s) for +: '" + typeName(a) + "' and '" + typeName(b) + "'");
+      case "-": case "*": case "/": case "//": case "%": case "**": {
+        if (Array.isArray(a) || Array.isArray(b) || typeof a === "string" || typeof b === "string") {
+          if (op === "*" && typeof a === "string" && isNum(b) && b >= 0 && Number.isInteger(b)) return a.repeat(b);
+          if (op === "*" && isNum(a) && typeof b === "string" && a >= 0 && Number.isInteger(a)) return b.repeat(a);
+          if (op === "*" && Array.isArray(a) && isNum(b) && b >= 0 && Number.isInteger(b)) { const r = []; for (let i = 0; i < b; i++) r.push(...a); return r; }
+          throw new PyRuntime("TypeError: unsupported operand type(s) for " + op + ": '" + typeName(a) + "' and '" + typeName(b) + "'");
+        }
+        if (!isNum(a) || !isNum(b)) throw new PyRuntime("TypeError: unsupported operand type(s) for " + op + ": '" + typeName(a) + "' and '" + typeName(b) + "'");
+        if (op === "-") return a - b;
+        if (op === "*") return a * b;
+        if (op === "/") { if (b === 0) throw new PyRuntime("ZeroDivisionError: division by zero"); return a / b; }
+        if (op === "//") { if (b === 0) throw new PyRuntime("ZeroDivisionError: integer division or modulo by zero"); return Math.floor(a / b); }
+        if (op === "%") { if (b === 0) throw new PyRuntime("ZeroDivisionError: integer division or modulo by zero"); const r = ((a % b) + b) % b; return r; }
+        if (op === "**") return Math.pow(a, b);
+      }
+    }
+  }
+  function compare(op, a, b) {
+    const bothNum = isNum(a) && isNum(b) && typeof a !== "boolean" && typeof b !== "boolean";
+    const bothStr = typeof a === "string" && typeof b === "string";
+    if (!bothNum && !bothStr) {
+      if (op === "==") return a === b || (isNum(a) && isNum(b) && a === b);
+      if (op === "!=") return !(a === b || (isNum(a) && isNum(b) && a === b));
+      throw new PyRuntime("TypeError: '<' not supported between instances of '" + typeName(a) + "' and '" + typeName(b) + "'");
+    }
+    switch (op) {
+      case "==": return a === b; case "!=": return a !== b;
+      case "<": return a < b; case "<=": return a <= b;
+      case ">": return a > b; case ">=": return a >= b;
+    }
+  }
+
+  class Interp {
+    constructor(print) {
+      this.print = print || (s => {});
+      this.globals = new Env(null);
+      const B = this.globals;
+      const argErr = n => { throw new PyRuntime("TypeError: " + n + "() takes at least one argument"); };
+      B.set("print", (...a) => { this.print(a.map(toStr).join(" ")); return null; });
+      B.set("len", a => {
+        if (typeof a === "string" || Array.isArray(a)) return a.length;
+        throw new PyRuntime("TypeError: object of type '" + typeName(a) + "' has no len()");
+      });
+      B.set("range", (a, b, c) => {
+        let start = 0, stop, step = 1;
+        if (b === undefined) { stop = a; } else { start = a; stop = b; }
+        if (c !== undefined) step = c;
+        if (!isNum(start) || !isNum(stop) || !isNum(step)) throw new PyRuntime("TypeError: range() arguments must be numbers");
+        if (step === 0) throw new PyRuntime("ValueError: range() arg 3 must not be zero");
+        const out = [];
+        if (step > 0) for (let i = start; i < stop; i += step) out.push(i);
+        else for (let i = start; i > stop; i += step) out.push(i);
+        return out;
+      });
+      B.set("int", v => {
+        if (typeof v === "string") { const n = Number(v.trim()); if (v.trim() === "" || Number.isNaN(n)) throw new PyRuntime("ValueError: invalid literal for int() with base 10: '" + v + "'"); return Math.trunc(n); }
+        if (v === true) return 1; if (v === false || v === null) return 0;
+        if (isNum(v)) return Math.trunc(v);
+        throw new PyRuntime("TypeError: int() argument must be a string or a number, not '" + typeName(v) + "'");
+      });
+      B.set("float", v => {
+        if (typeof v === "string") { const n = Number(v.trim()); if (v.trim() === "" || Number.isNaN(n)) throw new PyRuntime("ValueError: could not convert string to float: '" + v + "'"); return n; }
+        if (v === true) return 1; if (v === false || v === null) return 0;
+        if (isNum(v)) return v;
+        throw new PyRuntime("TypeError: float() argument must be a string or a number");
+      });
+      B.set("str", v => toStr(v));
+      B.set("abs", v => { if (!isNum(v)) throw new PyRuntime("TypeError: bad operand type for abs(): '" + typeName(v) + "'"); return Math.abs(v); });
+      B.set("min", (...a) => { if (!a.length) argErr("min"); const l = a.length === 1 && Array.isArray(a[0]) ? a[0] : a; if (!l.length) throw new PyRuntime("ValueError: min() arg is an empty sequence"); return l.reduce((x, y) => compare("<", y, x) ? y : x); });
+      B.set("max", (...a) => { if (!a.length) argErr("max"); const l = a.length === 1 && Array.isArray(a[0]) ? a[0] : a; if (!l.length) throw new PyRuntime("ValueError: max() arg is an empty sequence"); return l.reduce((x, y) => compare(">", y, x) ? y : x); });
+    }
+
+    run(src) {
+      const prog = parse(src);
+      let last = null;
+      for (const st of prog) {
+        try { last = this.exec(st, this.globals); }
+        catch (ex) {
+          if (ex instanceof ReturnSig) throw new PyRuntime("SyntaxError: 'return' outside function");
+          if (ex === BreakSig) throw new PyRuntime("SyntaxError: 'break' outside loop");
+          if (ex === ContinueSig) throw new PyRuntime("SyntaxError: 'continue' not properly in loop");
+          throw ex;
+        }
+      }
+      return last;
+    }
+
+    exec(st, env) {
+      switch (st.k) {
+        case "exprstmt": return this.evalExpr(st.e, env);
+        case "assign": {
+          const v = this.evalExpr(st.rhs, env);
+          if (st.target.k === "name") env.set(st.target.name, v);
+          else {
+            const obj = this.evalExpr(st.target.obj, env);
+            const ix = this.evalExpr(st.target.idx, env);
+            if (!Array.isArray(obj)) throw new PyRuntime("TypeError: '" + typeName(obj) + "' object does not support item assignment");
+            if (!Number.isInteger(ix)) throw new PyRuntime("TypeError: list indices must be integers");
+            if (ix < 0 || ix >= obj.length) throw new PyRuntime("IndexError: list assignment index out of range");
+            obj[ix] = v;
+          }
+          return v;
+        }
+        case "aug": {
+          const cur = env.get(st.target);
+          const v = binop(st.op, cur, this.evalExpr(st.rhs, env));
+          env.set(st.target, v);
+          return v;
+        }
+        case "if":
+          for (const c of st.clauses) if (truthy(this.evalExpr(c.test, env))) { this.runBlock(c.body, env); return null; }
+          if (st.els) this.runBlock(st.els, env);
+          return null;
+        case "while":
+          for (;;) {
+            if (!truthy(this.evalExpr(st.test, env))) break;
+            try { this.runBlock(st.body, env); }
+            catch (ex) { if (ex === BreakSig) break; if (ex === ContinueSig) continue; throw ex; }
+          }
+          return null;
+        case "for": {
+          const it = this.evalExpr(st.iter, env);
+          let seq;
+          if (Array.isArray(it)) seq = it.slice();
+          else if (typeof it === "string") seq = it.split("");
+          else throw new PyRuntime("TypeError: '" + typeName(it) + "' object is not iterable");
+          for (const v of seq) {
+            env.set(st.name, v);
+            try { this.runBlock(st.body, env); }
+            catch (ex) { if (ex === BreakSig) break; if (ex === ContinueSig) continue; throw ex; }
+          }
+          return null;
+        }
+        case "def":
+          env.set(st.name, { __fn: true, name: st.name, params: st.params, body: st.body, env });
+          return null;
+        case "return": throw new ReturnSig(st.v ? this.evalExpr(st.v, env) : null);
+        case "break": throw BreakSig;
+        case "continue": throw ContinueSig;
+        case "pass": return null;
+      }
+    }
+    runBlock(body, env) { for (const st of body) this.exec(st, env); }
+
+    callFn(f, args) {
+      if (typeof f === "function") return f(...args);
+      if (f && f.__fn) {
+        if (args.length !== f.params.length)
+          throw new PyRuntime("TypeError: " + f.name + "() takes " + f.params.length + " positional argument" + (f.params.length === 1 ? "" : "s") + " but " + args.length + (args.length === 1 ? " was" : " were") + " given");
+        const local = new Env(f.env);
+        f.params.forEach((pn, i) => local.set(pn, args[i]));
+        try { this.runBlock(f.body, local); } catch (ex) { if (ex instanceof ReturnSig) return ex.v; throw ex; }
+        return null;
+      }
+      throw new PyRuntime("TypeError: '" + typeName(f) + "' object is not callable");
+    }
+
+    evalExpr(e, env) {
+      switch (e.k) {
+        case "num": case "str": return e.v;
+        case "const": return e.v;
+        case "name": return env.get(e.name);
+        case "list": return e.items.map(it => this.evalExpr(it, env));
+        case "neg": { const v = this.evalExpr(e.e, env); if (!isNum(v) || typeof v === "boolean") throw new PyRuntime("TypeError: bad operand type for unary -: '" + typeName(v) + "'"); return -v; }
+        case "not": return !truthy(this.evalExpr(e.e, env));
+        case "and": { const l = this.evalExpr(e.l, env); return truthy(l) ? this.evalExpr(e.r, env) : l; }
+        case "or": { const l = this.evalExpr(e.l, env); return truthy(l) ? l : this.evalExpr(e.r, env); }
+        case "cmp": return compare(e.op, this.evalExpr(e.l, env), this.evalExpr(e.r, env));
+        case "bin": return binop(e.op, this.evalExpr(e.l, env), this.evalExpr(e.r, env));
+        case "call": {
+          const f = this.evalExpr(e.fn, env);
+          const args = e.args.map(a => this.evalExpr(a, env));
+          return this.callFn(f, args);
+        }
+        case "index": {
+          const obj = this.evalExpr(e.obj, env);
+          const ix = this.evalExpr(e.idx, env);
+          if (typeof obj === "string" || Array.isArray(obj)) {
+            if (!Number.isInteger(ix) || typeof ix === "boolean") throw new PyRuntime("TypeError: string indices must be integers");
+            const i = ix < 0 ? obj.length + ix : ix;
+            if (i < 0 || i >= obj.length) throw new PyRuntime("IndexError: " + (typeof obj === "string" ? "string index" : "list index") + " out of range");
+            return obj[i];
+          }
+          throw new PyRuntime("TypeError: '" + typeName(obj) + "' object is not subscriptable");
+        }
+      }
+    }
+  }
+
+  return { Interp, parse, tokenize, toStr, toRepr, PyRuntime };
+})();
+if (typeof module !== "undefined" && module.exports) module.exports = { PyMini };
+
+/* ---------------- Terminal app ---------------- */
+const TM_BANNER = [
+  "Python 3.11.4 (WebOS mini-python, " + new Date().getFullYear() + ") on webos",
+  'Type "help" for a cheat-sheet of the supported subset.',
+  ""
+].join("\n");
+
+const TM_HELP = [
+  "WebOS mini-Python — supported subset:",
+  "  numbers, strings, booleans, None, lists   # comments",
+  "  + - * / // % **   comparisons   and / or / not",
+  "  variables, = and += -= *= /=, indexing  s[0] lst[1]",
+  "  if / elif / else   while   for i in range(...) or a list or a string",
+  "  break / continue / pass   def f(x): ... return (recursion works)",
+  "  built-ins: print len range int float str abs min max",
+  "Try:  def fib(n):",
+  "          if n < 2:",
+  "              return n",
+  "          return fib(n-1) + fib(n-2)",
+  "      fib(10)"
+].join("\n");
+
+const TM_DEMO = [
+  "def fib(n):",
+  "    if n < 2:",
+  "        return n",
+  "    return fib(n - 1) + fib(n - 2)",
+  "",
+  "for i in range(1, 11):",
+  '    print("fib(" + str(i) + ") =", fib(i))',
+  "",
+  'print("7 // 2 =", 7 // 2, "| 7 / 2 =", 7 / 2, "| 2 ** 10 =", 2 ** 10)',
+  'print("WebOS mini-Python", "OK", "!")'
+].join("\n");
+
+Apps.terminal = {
+  title: "Terminal",
+  width: 660, height: 440, minW: 420, minH: 260,
+  icon: '<svg viewBox="0 0 24 24"><defs><linearGradient id="tg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d3d42"/><stop offset="1" stop-color="#1b1b1f"/></linearGradient></defs><rect x="2.5" y="3.5" width="19" height="17" rx="3.4" fill="url(#tg1)"/><path d="M6.2 8.1l2.9 2.5-2.9 2.5" fill="none" stroke="#f5f5f7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 16.4h5.4" stroke="#8e8e93" stroke-width="1.5" stroke-linecap="round" fill="none"/><rect x="13.6" y="8.1" width="4.4" height="1.5" rx="0.75" fill="#30d158"/><rect x="13.6" y="11.6" width="4.4" height="1.5" rx="0.75" fill="#ff9f0a"/></svg>',
+  menus: () => ["Shell", "Help"],
+  menu: () => [
+    { label: "Run Fibonacci Demo", sc: "⌘R", fn: () => { const w = topWinOf("terminal"); if (w && w.tmDemo) w.tmDemo(); } },
+    { label: "Clear Screen", sc: "⌘K", fn: () => { const w = topWinOf("terminal"); if (w && w.tmClear) w.tmClear(); } },
+    { label: "Reset Session", fn: () => { const w = topWinOf("terminal"); if (w && w.tmReset) w.tmReset(); } }
+  ],
+  mount(root, win) {
+    const body = el("div", { class: "tm-body" });
+    const out = el("div", { class: "tm-out", "aria-live": "polite", role: "log" });
+    const row = el("div", { class: "tm-row" });
+    const ps1 = el("span", { class: "tm-ps1" }, ">>>");
+    const input = el("input", { class: "tm-in", type: "text", spellcheck: "false", autocapitalize: "off", autocomplete: "off", "aria-label": "Python command line" });
+    row.append(ps1, input);
+    body.append(out, row);
+    root.append(body);
+
+    let interp = new PyMini.Interp(line => echo(line, "out"));
+    let buffer = [];
+    const history = [];
+    let hIx = -1;
+
+    function echo(text, cls) {
+      const pre = el("div", { class: "tm-line " + (cls || "") });
+      pre.textContent = text;
+      out.append(pre);
+      body.scrollTop = body.scrollHeight;
+    }
+    function echoPromptLine(prompt, line) { echo(prompt + " " + line, "in"); }
+
+    function result(v) {
+      if (v === undefined) return;
+      echo(toReprProxy(v), "res");
+    }
+    function toReprProxy(v) { return PyMini.toRepr(v); }
+
+    function resetPrompt() {
+      ps1.textContent = buffer.length ? "..." : ">>>";
+      input.value = "";
+      body.scrollTop = body.scrollHeight;
+      input.focus();
+    }
+
+    function submit(line) {
+      echoPromptLine(buffer.length ? "..." : ">>>", line);
+      if (line.trim() === "" && buffer.length === 0) { resetPrompt(); return; }
+      if (line.trim() === "") {
+        const src = buffer.join("\n");
+        buffer = [];
+        try { interp.run(src); }
+        catch (ex) { reportError(ex); }
+        resetPrompt();
+        return;
+      }
+      buffer.push(line);
+      const src = buffer.join("\n");
+      // 1) completeness probe: fresh parse
+      let prog = null;
+      try {
+        prog = PyMini.parse(src);
+      } catch (ex) {
+        if (ex && ex.incomplete) { resetPrompt(); return; }   // keep buffering, show "..."
+        buffer.pop();
+        reportError(ex);
+        buffer = [];
+        resetPrompt();
+        return;
+      }
+      buffer = [];
+      try {
+        const v = interp.run(src);
+        const lastStmt = prog[prog.length - 1];
+        if (v !== null && v !== undefined && lastStmt && lastStmt.k === "exprstmt") result(v);
+      } catch (ex) { reportError(ex); }
+      resetPrompt();
+    }
+
+    function reportError(ex) {
+      echo(ex && ex.pyMsg ? ex.pyMsg : String(ex && ex.message ? ex.message : ex), "err");
+    }
+
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const line = input.value;
+        if (line.trim() !== "") { history.push(line); }
+        hIx = history.length;
+        submit(line);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (hIx > 0) { hIx--; input.value = history[hIx] || ""; }
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (hIx < history.length) { hIx++; input.value = history[hIx] || ""; }
+      } else if (e.key === "c" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        echoPromptLine(ps1.textContent, input.value + "^C");
+        buffer = [];
+        resetPrompt();
+      }
+    });
+    body.addEventListener("mouseup", () => { if (!getSelection().toString()) input.focus(); });
+
+    win.tmClear = () => { out.innerHTML = ""; echo(TM_BANNER.trimEnd(), "out"); };
+    win.tmReset = () => { interp = new PyMini.Interp(line => echo(line, "out")); buffer = []; resetPrompt(); toast("Terminal session reset"); };
+    win.tmDemo = () => {
+      TM_DEMO.split("\n").forEach(l => echoPromptLine(">>>", l));
+      try {
+        const v = interp.run(TM_DEMO);
+        if (v !== null && v !== undefined) result(v);
+      } catch (ex) { reportError(ex); }
+      resetPrompt();
+    };
+
+    echo(TM_BANNER.trimEnd(), "out");
+    setTimeout(() => input.focus(), 0);
+  }
+};
+/*__MORE_APPS__*/
+/* ---------------- Paint ---------------- */
+const TOOL_LINE_SVG = svgi('<path d="M5 19 19 5"/>');
+const TOOL_RECT_SVG = svgi('<rect x="5" y="7" width="14" height="10" rx="1.5"/>');
+const DOWNLOAD_SVG = svgi('<path d="M12 4v10M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/>');
+
+Apps.paint = {
+  title: "Paint",
+  width: 660, height: 520, minW: 440, minH: 340,
+  icon: '<svg viewBox="0 0 24 24"><defs><linearGradient id="ptg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fefefe"/><stop offset="1" stop-color="#e9e9ee"/></linearGradient></defs><rect x="3" y="2" width="18" height="20" rx="4.2" fill="url(#ptg1)" stroke="rgba(0,0,0,.15)"/><path d="M6.5 15.5c1.8-4.5 5.2-8.5 9.5-10.5" stroke="#ff9f0a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M7 11.5c2-2.4 4.6-4.4 7.5-5.6" stroke="#ff375f" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M8.5 8.2c1.2-1.1 2.6-2 4-2.7" stroke="#0a84ff" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="7.5" cy="17.8" r="1.6" fill="#30d158"/><circle cx="11.5" cy="18.6" r="1.6" fill="#0a84ff"/><circle cx="15.8" cy="18" r="1.6" fill="#ff375f"/></svg>',
+  menus: () => ["File", "Tools"],
+  menu: () => [
+    { label: "New Canvas", sc: "⌘N", fn: () => { const w = topWinOf("paint"); if (w && w.paintClear) w.paintClear(); } },
+    { label: "Export PNG…", sc: "⇧⌘E", fn: () => { const w = topWinOf("paint"); if (w && w.paintExport) w.paintExport(); } }
+  ],
+  mount(root, win) {
+    let tool = "brush", color = "#1d1d1f", size = 4;
+    let drawing = false, sx = 0, sy = 0, lx = 0, ly = 0, snapshot = null;
+
+    const wrap = el("div", { class: "pt-canvas-wrap" });
+    const canvas = el("canvas", { class: "pt-canvas", "aria-label": "Painting canvas" });
+    const ctx = canvas.getContext("2d");
+    wrap.append(canvas);
+
+    function fitCanvas(preserve) {
+      const w = Math.max(60, wrap.clientWidth), h = Math.max(60, wrap.clientHeight);
+      if (canvas.width === w && canvas.height === h) return;
+      let old = null;
+      if (preserve && canvas.width > 0 && canvas.height > 0) {
+        old = document.createElement("canvas");
+        old.width = canvas.width; old.height = canvas.height;
+        old.getContext("2d").drawImage(canvas, 0, 0);
+      }
+      canvas.width = w; canvas.height = h;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+      if (old) ctx.drawImage(old, 0, 0);
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+    }
+
+    function pos(e) {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+
+    function strokeSeg(from, to) {
+      ctx.strokeStyle = tool === "eraser" ? "#ffffff" : color;
+      ctx.lineWidth = tool === "eraser" ? size * 2.2 : size;
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    }
+
+    function drawShape(cur) {
+      ctx.putImageData(snapshot, 0, 0);
+      ctx.strokeStyle = color; ctx.lineWidth = size;
+      ctx.beginPath();
+      if (tool === "line") { ctx.moveTo(sx, sy); ctx.lineTo(cur.x, cur.y); }
+      else { ctx.rect(sx, sy, cur.x - sx, cur.y - sy); }
+      ctx.stroke();
+    }
+
+    canvas.addEventListener("pointerdown", e => {
+      if (e.button !== 0) return;
+      drawing = true;
+      canvas.setPointerCapture(e.pointerId);
+      const p = pos(e); sx = p.x; sy = p.y; lx = p.x; ly = p.y;
+      if (tool === "brush" || tool === "eraser") strokeSeg(p, p);
+      else snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      e.preventDefault();
+    });
+    canvas.addEventListener("pointermove", e => {
+      if (!drawing) return;
+      const p = pos(e);
+      if (tool === "brush" || tool === "eraser") { strokeSeg({ x: lx, y: ly }, p); lx = p.x; ly = p.y; }
+      else drawShape(p);
+    });
+    const endStroke = e => {
+      if (!drawing) return;
+      drawing = false;
+      if (tool === "line" || tool === "rect") drawShape(pos(e));
+      snapshot = null;
+    };
+    canvas.addEventListener("pointerup", endStroke);
+    canvas.addEventListener("pointercancel", endStroke);
+
+    win.paintClear = () => {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      toast("Canvas cleared");
+    };
+
+    win.paintExport = () => {
+      const a = document.createElement("a");
+      a.download = "painting.png";
+      a.setAttribute("href", canvas.toDataURL("image/png"));
+      a.click();
+      toast("Exported painting.png to Downloads");
+    };
+
+    const tools = [
+      ["brush", ICONS.brush, "Brush"],
+      ["eraser", ICONS.eraser, "Eraser"],
+      ["line", TOOL_LINE_SVG, "Line"],
+      ["rect", TOOL_RECT_SVG, "Rectangle"]
+    ];
+    const toolBtns = {};
+    const bar = el("div", { class: "pt-bar" });
+    for (const [id, icon, label] of tools) {
+      const b = el("button", { class: "pt-tool", html: icon, "aria-label": label, title: label });
+      b.addEventListener("click", () => {
+        tool = id;
+        for (const k in toolBtns) toolBtns[k].classList.toggle("on", k === id);
+        Sound.click();
+      });
+      toolBtns[id] = b;
+      bar.append(b);
+    }
+    toolBtns.brush.classList.add("on");
+
+    bar.append(el("span", { class: "sep" }));
+
+    const SWATCHES = ["#1d1d1f", "#ffffff", "#ff375f", "#ff9f0a", "#ffd60a", "#30d158", "#0a84ff", "#5e5ce6", "#bf5af2", "#a2845e"];
+    const swatchBtns = [];
+    for (const c of SWATCHES) {
+      const b = el("button", { class: "pt-sw", style: "background:" + c, "aria-label": "Color " + c });
+      b.addEventListener("click", () => {
+        color = c;
+        swatchBtns.forEach(x => x.classList.remove("on"));
+        b.classList.add("on");
+        picker.value = c;
+      });
+      swatchBtns.push(b);
+      bar.append(b);
+    }
+    swatchBtns[0].classList.add("on");
+
+    const picker = el("input", { type: "color", value: "#1d1d1f", "aria-label": "Custom color", title: "Custom color" });
+    picker.addEventListener("input", () => {
+      color = picker.value;
+      swatchBtns.forEach(x => x.classList.remove("on"));
+    });
+    bar.append(picker);
+
+    bar.append(el("span", { class: "sep" }));
+
+    const sizeLabel = el("span", { class: "pt-size-label" }, "4 px");
+    const sizeIn = el("input", { type: "range", min: "1", max: "40", value: "4", "aria-label": "Brush size", title: "Brush size" });
+    sizeIn.addEventListener("input", () => { size = +sizeIn.value; sizeLabel.textContent = size + " px"; });
+
+    bar.append(sizeIn, sizeLabel,
+      el("span", { class: "sep" }),
+      el("button", { class: "btn", onclick: () => win.paintClear() }, "Clear"),
+      el("button", { class: "btn primary", html: DOWNLOAD_SVG, onclick: () => win.paintExport() }, "Export"));
+
+    root.append(el("div", { class: "pt" }, bar, wrap));
+    win.onResize = () => fitCanvas(true);
+    setTimeout(() => fitCanvas(false), 0);
+  }
+};
+
+/* ---------------- File Manager ---------------- */
+const PENCIL_SVG = svgi('<path d="M4 20l1.2-4.2L15.6 5.4a2.05 2.05 0 0 1 2.9 2.9L8.1 18.7 4 20z"/><path d="M13.6 7.4l3 3"/>');
+const DRIVE_SVG = svgi('<rect x="3.5" y="13.5" width="17" height="6.5" rx="2"/><circle cx="17" cy="16.8" r=".9" fill="currentColor" stroke="none"/><path d="M5.5 13.5 7.4 5.6a1.4 1.4 0 0 1 1.4-1.1h6.4a1.4 1.4 0 0 1 1.4 1.1l1.9 7.9"/>');
+
+function openInTextEditor(name, content) {
+  const w = Array.from(WM.windows.values()).find(x => x.appId === "editor");
+  if (w) {
+    if (w.minimized) WM.unminimize(w);
+    WM.focus(w);
+    const area = w.el.querySelector(".editor-area");
+    if (area) {
+      area.value = content;
+      area.dispatchEvent(new Event("input"));
+    }
+    w.setTitle(name + " — TextEdit");
+  } else {
+    Store.data.editorText = content;
+    Store.data.editorSaved = false;
+    Store.save();
+    const nw = WM.open("editor");
+    if (nw) nw.setTitle(name + " — TextEdit");
+  }
+}
+
+Apps.files = {
+  title: "Files",
+  width: 700, height: 470, minW: 460, minH: 300,
+  icon: '<svg viewBox="0 0 24 24"><defs><linearGradient id="fmg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6bc1fb"/><stop offset="1" stop-color="#1e7fe8"/></linearGradient></defs><rect x="2.5" y="3.5" width="19" height="17" rx="4.5" fill="url(#fmg1)"/><path d="M7.4 9.6v2.1M16.6 9.6v2.1" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M7.9 15c1 1.5 2.5 2.3 4.1 2.3s3.1-.8 4.1-2.3" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>',
+  menus: () => ["File", "Edit"],
+  menu: () => [
+    { label: "New Folder", sc: "⇧⌘N", fn: () => { const w = topWinOf("files"); if (w && w.fmNewFolder) w.fmNewFolder(); } },
+    { label: "New Text File", sc: "⌘N", fn: () => { const w = topWinOf("files"); if (w && w.fmNewFile) w.fmNewFile(); } },
+    { label: "Rename Selected", fn: () => { const w = topWinOf("files"); if (w && w.fmRename) w.fmRename(); } },
+    { label: "Delete Selected", sc: "⌘⌫", fn: () => { const w = topWinOf("files"); if (w && w.fmDelete) w.fmDelete(); } }
+  ],
+  mount(root, win) {
+    let path = [];              /* [] = Macintosh HD */
+    const back = [], fwd = [];
+    let selected = null;
+
+    const side = el("div", { class: "fm-side" });
+    const crumbs = el("div", { class: "fm-path" });
+    const list = el("div", { class: "fm-list" });
+    const status = el("div", { class: "fm-status" });
+
+    function curFolder() { return vfsFind(path) || VFS.root; }
+
+    function navigate(p, remember) {
+      if (remember && String(p) !== String(path)) { back.push(path); fwd.length = 0; }
+      path = p; selected = null; renderAll();
+    }
+
+    function askName(head, initial, okLabel, cb) {
+      const input = el("input", { type: "text", value: initial, spellcheck: "false" });
+      const ok = () => { const v = input.value.trim(); if (!v) return; ov.remove(); cb(v); };
+      const card = el("div", { class: "sheet-card dlg" },
+        el("div", { class: "sheet-head" }, el("b", {}, head)),
+        el("div", { class: "dlg-body" }, el("p", {}, "Name:"), input),
+        el("div", { class: "dlg-foot" },
+          el("button", { class: "btn", onclick: () => ov.remove() }, "Cancel"),
+          el("button", { class: "btn primary", onclick: ok }, okLabel)));
+      const ov = el("div", { class: "sheet" }, card);
+      input.addEventListener("keydown", e => {
+        e.stopPropagation();
+        if (e.key === "Enter") ok();
+        else if (e.key === "Escape") ov.remove();
+      });
+      root.append(ov);
+      setTimeout(() => { input.focus(); input.select(); }, 30);
+    }
+
+    function confirmDelete(name, cb) {
+      const card = el("div", { class: "sheet-card dlg" },
+        el("div", { class: "sheet-head" }, el("b", {}, 'Delete "' + name + '"')),
+        el("div", { class: "dlg-body" }, el("p", {}, "This item will be removed from this Mac. This cannot be undone.")),
+        el("div", { class: "dlg-foot" },
+          el("button", { class: "btn", onclick: () => ov.remove() }, "Cancel"),
+          el("button", { class: "btn danger", onclick: () => { ov.remove(); cb(); } }, "Delete")));
+      const ov = el("div", { class: "sheet" }, card);
+      root.append(ov);
+    }
+
+    function nameTaken(folder, name) { return folder.children.some(c => c.name === name); }
+
+    win.fmNewFolder = () => askName("New Folder", vfsUniqueName(curFolder(), "untitled folder", ""), "Create", name => {
+      curFolder().children.push({ name: name, type: "folder", children: [] });
+      VFS.save(); selected = name; renderAll(); toast('Folder "' + name + '" created');
+    });
+
+    win.fmNewFile = () => askName("New Text File", vfsUniqueName(curFolder(), "untitled", ".txt"), "Create", raw => {
+      const name = raw.includes(".") ? raw : raw + ".txt";
+      if (nameTaken(curFolder(), name)) { toast("That name is already taken"); return; }
+      curFolder().children.push({ name: name, type: "txt", content: "" });
+      VFS.save(); selected = name; renderAll(); toast('File "' + name + '" created');
+    });
+
+    win.fmRename = () => {
+      if (!selected) { toast("Select an item first"); return; }
+      const old = selected;
+      askName("Rename", old, "Rename", name => {
+        const node = curFolder().children.find(c => c.name === old);
+        if (!node) return;
+        if (name !== old && nameTaken(curFolder(), name)) { toast("That name is already taken"); return; }
+        node.name = name; VFS.save(); selected = name; renderAll(); toast("Renamed to " + name);
+      });
+    };
+
+    win.fmDelete = () => {
+      if (!selected) { toast("Select an item first"); return; }
+      const name = selected;
+      confirmDelete(name, () => {
+        const f = curFolder();
+        f.children = f.children.filter(c => c.name !== name);
+        VFS.save(); selected = null; renderAll(); toast('"' + name + '" deleted');
+      });
+    };
+
+    function renderSide() {
+      side.innerHTML = "";
+      side.append(el("h4", {}, "Favorites"));
+      for (const f of (VFS.root.children || []).filter(c => c.type === "folder")) {
+        side.append(el("button", {
+          class: path.length === 1 && path[0] === f.name ? "on" : "",
+          html: ICONS.folder, onclick: () => navigate([f.name], true)
+        }, f.name));
+      }
+      side.append(el("h4", {}, "Locations"));
+      side.append(el("button", {
+        class: path.length === 0 ? "on" : "",
+        html: DRIVE_SVG, onclick: () => navigate([], true)
+      }, "Macintosh HD"));
+    }
+
+    function renderCrumbs() {
+      crumbs.innerHTML = "";
+      const seg = (label, p) => {
+        crumbs.append(el("button", { onclick: () => navigate(p, true) }, label));
+      };
+      seg("Macintosh HD", []);
+      path.forEach((s, i) => {
+        crumbs.append(el("span", { class: "fm-sep" }, "›"));
+        seg(s, path.slice(0, i + 1));
+      });
+    }
+
+    function renderList() {
+      list.innerHTML = "";
+      const kids = (curFolder().children || []).slice().sort((a, b) =>
+        a.type === b.type ? a.name.localeCompare(b.name) : (a.type === "folder" ? -1 : 1));
+      status.textContent = kids.length + (kids.length === 1 ? " item" : " items") + (selected ? ", 1 selected" : "");
+      if (!kids.length) { list.append(el("div", { class: "empty-note" }, "This folder is empty")); return; }
+      list.append(el("div", { class: "fm-cols" },
+        el("span", {}, "Name"), el("span", {}, "Kind"), el("span", {}, "Size")));
+      for (const node of kids) {
+        const row = el("div", {
+          class: "fm-row" + (node.name === selected ? " sel" : ""),
+          role: "button", tabindex: "0",
+          "aria-label": node.name
+        },
+          el("div", { class: "fm-name", html: node.type === "folder" ? ICONS.folder : ICONS.fileText }, el("span", {}, node.name)),
+          el("span", { class: "fm-kind" }, node.type === "folder" ? "Folder" : "Plain Text"),
+          el("span", { class: "fm-size" }, node.type === "folder" ? (node.children || []).length + " items" : (node.content || "").length + " bytes"));
+        row.addEventListener("click", () => {
+          selected = node.name;
+          $$(".fm-row", list).forEach(r => r.classList.remove("sel"));
+          row.classList.add("sel");
+          status.textContent = kids.length + (kids.length === 1 ? " item" : " items") + ", 1 selected";
+        });
+        row.addEventListener("dblclick", () => openNode(node));
+        row.addEventListener("keydown", e => { if (e.key === "Enter") openNode(node); });
+        list.append(row);
+      }
+    }
+
+    function openNode(node) {
+      if (node.type === "folder") { navigate(path.concat(node.name), true); return; }
+      openInTextEditor(node.name, node.content || "");
+      toast('Opening "' + node.name + '" in TextEdit');
+    }
+
+    function renderAll() { renderSide(); renderCrumbs(); renderList(); }
+
+    const btnBack = el("button", { class: "icon-btn", html: ICONS.chevL, "aria-label": "Back" });
+    btnBack.addEventListener("click", () => { if (back.length) { fwd.push(path); path = back.pop(); selected = null; renderAll(); } });
+    const btnFwd = el("button", { class: "icon-btn", html: ICONS.chevR, "aria-label": "Forward" });
+    btnFwd.addEventListener("click", () => { if (fwd.length) { back.push(path); path = fwd.pop(); selected = null; renderAll(); } });
+    const btnNF = el("button", { class: "icon-btn", html: ICONS.newFolder, "aria-label": "New folder" });
+    btnNF.addEventListener("click", () => win.fmNewFolder());
+    const btnNT = el("button", { class: "icon-btn", html: ICONS.newFile, "aria-label": "New text file" });
+    btnNT.addEventListener("click", () => win.fmNewFile());
+    const btnRe = el("button", { class: "icon-btn", html: PENCIL_SVG, "aria-label": "Rename" });
+    btnRe.addEventListener("click", () => win.fmRename());
+    const btnDe = el("button", { class: "icon-btn", html: ICONS.trash, "aria-label": "Delete" });
+    btnDe.addEventListener("click", () => win.fmDelete());
+
+    root.append(el("div", { class: "fm" },
+      side,
+      el("div", { class: "fm-main" },
+        el("div", { class: "fm-bar" }, btnBack, btnFwd, crumbs,
+          el("span", { class: "sep" }), btnNF, btnNT, btnRe, btnDe),
+        list, status)));
+
+    root.tabIndex = 0;
+    root.addEventListener("keydown", e => {
+      if (e.key === "Backspace" || e.key === "Delete") { e.preventDefault(); win.fmDelete(); }
+    });
+
+    renderAll();
+  }
+};
+
+
+/* ================================================================
+   Boot
+   ================================================================ */
+(function boot() {
+  Shell.init();
+  Dock.init();
+  window.addEventListener("resize", () => {
+    for (const w of WM.windows.values()) {
+      const p = WM.clampXy(w, w.x, w.y);
+      w.x = p.x; w.y = p.y;
+      w.el.style.left = p.x + "px"; w.el.style.top = p.y + "px";
+    }
+  });
+  document.addEventListener("contextmenu", e => e.preventDefault());
+  toast("Welcome to WebOS");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+Design and create a web-OS like macOS Sonoma, full-featured single HTML file.
+
+Include: desktop wallpaper, dock at bottom, top menu bar, multi-window drag-and-drop, text editor, python terminal (Pyodide-free: simulate a python-like REPL or embed a tiny interpreter), file manager, paint drawing app, simple video player, calendar, calculator.
+
+Use html+css+javascript, all resources inline, NO external CDN links. Output complete one-file HTML, I can copy all code and open in Chrome directly. UI strictly follow Apple HIG design, glass-morphism frosted glass effect, rounded window corners, SF-Pro font stack, light mode.
+
+Final deliverable: /home/ubuntu/webos/webos.html (single self-contained file). Verify it opens standalone: run a quick JS syntax check (e.g. node --check on extracted script or a headless parse) and confirm file size > 50KB.
